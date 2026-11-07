@@ -9,6 +9,24 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
+## 2026-11-08: the screen console (display, step 1) and the console font
+
+Second and third boots of slot B, one change each, flashed with
+`bin/omamobile fastboot` and `flash` from the running initramfs:
+
+- **`SIMPLEFB_TRIG_CON="0x1c300030 0x3061"` with `INITRAMFS_FB_WAIT=1`** [V]:
+  after the init's write the register reads `0x3061`, fbcon binds to
+  simpledrm's `fb0` (`/dev/fb0`, 1080x2400, 32 bpp, stride 4320) and the
+  owner sees the init's lines on the panel: black screen, text at the top.
+  The panel refreshes, so ABL's TE mask is lifted the same way as on raven
+  and cheetah. A dump of `/dev/fb0` over SSH shows the same lines (the
+  splash is drawn first and the console's lines land over its top). SSH 2 s
+  into the boot.
+- **`fbcon=font:TER16x32`** on `VENDOR_CMDLINE` [V]: the kernel command line
+  carries it (ABL keeps the vendor_boot line), the console is twice the
+  size. Terminus 16x32 is the largest built-in font; a bigger on-screen log
+  needs a userspace console later.
+
 ## 2026-11-08: first light on the published kernel (M1 done)
 
 Slot B of the Pixel 6 above boots the published kernel from `omamobile`
