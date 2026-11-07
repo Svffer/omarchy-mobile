@@ -9,6 +9,124 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
+## 2026-11-08: stage 0 closed on an unlocked Pixel 6 (LineageOS, root) and its factory image
+
+Read-only queries of a retail Pixel 6 (MP1.0, SKU GB7N6, bootloader unlocked)
+running a self-built LineageOS 24.0 userdebug (`adb root` works, as
+CONTRIBUTING §5.1 allows): `bin/omamobile capture` over adb and in fastboot,
+`/sys/firmware/devicetree/base`, and `dd` reads of the `vbmeta_*` headers and
+the `boot_*` footers. Nothing was written. The facts below are [V] from that
+phone (`O/`) or from Google's factory image `oriole-cp2a.260705.006` (`F2/`,
+SHA-256 `ed43367c…`, the build the phone's bootloader and radio came from)
+unless marked. Captures stay in `~/android/reference/`, never here.
+
+### The phone (O/)
+
+- **`soc_id` is `<0x9845001 0x0>`, B0**, the first `SOC_IDS` value and what
+  the published `gs101-oriole.dts` carries. The live DT's model is
+  `Oriole DVT`, root compatible `google,GS101 Oriole`, `google,GS101`.
+- **Board entry 0** (`ro.boot.dtbo_idx` 0 = 0x20304/0x10000), `hw-revision`
+  MP1.0, `androidboot.hw.soc.rev` 3, `primary_panel_drv`
+  `panel-samsung-s6e3fc3`. Confirms the 2026-10-16 retail phone.
+- **Bootloader `slider-17.0-15199431`, baseband
+  `g5123b-145971-260414-B-15201439`**: F2/'s `android-info.txt` requires
+  exactly these two. The ABL reports one `version-bootloader` (no per-slot
+  variables), as raven's does. Both slots `slot-successful: yes`,
+  `unbootable: no`, retry 2; current slot b (a LineageOS OTA moved it).
+- **Partitions**: `has-slot` boot, vendor_boot, dtbo, vbmeta, vbmeta_system,
+  vbmeta_vendor, bootloader; no `init_boot`, no `vendor_kernel_boot`. Sizes:
+  boot and vendor_boot 0x4000000, dtbo 0x1000000, vbmeta 0x10000, devinfo
+  0x2000, userdata 0x395c215000. `BOOT_IMAGES` and `UFS_RW` stand.
+- **RAM**: four 2 GiB banks at 0x80000000, 0x880000000, 0x900000000,
+  0x980000000 (`/memory@*`, injected by ABL).
+- **ABL appends `console=null`** and `exynos_drm.panel_name=samsung-s6e3fc3`
+  to `/chosen/bootargs`, after the DT's own line: `console=` we pass is
+  dropped, as on raven (raven's descriptor and plymouth note apply).
+- **AVB on the phone**: `vbmeta_a` and `vbmeta_b` are stock's layout (chain
+  `boot` at location 2, `vbmeta_system` 1, `vbmeta_vendor` 3; `dtbo`,
+  `vendor_boot`, `vendor_dlkm` as hash descriptors) with **flags 3**: the
+  LineageOS install disabled verification, so this phone would also boot a
+  footer-less `boot_b`. That is this phone's state, not the descriptor's
+  assumption. Both `boot_a` and `boot_b` carry LineageOS's footer (SHA256_RSA2048,
+  rollback index 1790812800, security patch 2026-07-05).
+- **Reserved memory against `/proc/iomem`**: every `no-map` node of the live
+  DT is a `reserved` range in iomem: gsa 0x90200000+0x400000, tpu_fw
+  0x93000000+0x1000000, aoc 0x94000000+0x3000000, xhci_dma 0x97000000+0x400000,
+  sec_dram 0xb7200000+0x8e00000, seclog 0xc3000000+0x80000, header
+  0xd8100000+0x10000, log_kevents 0xd8110000+0x700000, log_s2d
+  0xd8810000+0x1800000, log_array_reset 0xda010000+0xa00000, log_bcm
+  0xdd610000+0x400000, log_itmon 0xdda10000+0x10000, sec_pt 0xe0000000+0x2500000,
+  cp_rmem_1 0xe8000000+0x1c00000, cp_rmem_2 0xee000000+0x400000, cp_rmem
+  0xf0000000+0x800000, cp_msi_rmem 0xf6200000+0x1000, abl 0xf8800000+0x1000000,
+  dss_log 0xfd3f0000+0xe000, debug_kinfo 0xfd3fe000+0x1000, ramoops
+  0xfd3ff000+0x400000, bldr_log 0xfd800000+0x100000, suspend_diag
+  0xfd90c000+0x1000, ect_binary 0x90000000+0x3a000 (`#address-cells` 2,
+  `#size-cells` 1: 12-byte `reg` entries). iomem also reserves ranges with no
+  DT node: 0xfa3f0000-0xfd3effff (ABL's carve-out; the board DTS's
+  `cont_splash_mem` at 0xfac00000 lies inside it), 0xfec00000-0xffbfffff,
+  0xffdf0000-0xffffffff, 0x9cef80000-0x9d7ffffff and 0x9d807f000-0x9d816ffff
+  [I: ABL's or Trusty's, to name before any of them is used].
+- **Hardware the stock-derived kernel (6.1.157) binds**, for the plans:
+  panel Samsung S6E3FC3 (`panel_samsung_s6e3fc3`, DSI hs_clk 1120, DECON0/2);
+  touch ST FTS "ftm5" on `spi11.0` (driver 5.2.16.16, firmware `ftm5_fw_o6.ftb`,
+  limits `stm_fts_production_limits_o6.csv`, `irq_gpio` 35); haptics Cirrus
+  **CS40L25A rev B1** with the `cs40l20.bin` wavetable (raven's driver and
+  files); speakers **two CS35L41 B2 on `spi13.0`/`spi13.1`** with
+  `cs35l41-dsp1-spk-prot.{wmfw,bin}` and `R-…bin`, no fast_switch files (as
+  raven); Wi-Fi **BCM4389** (chipid 0x4389, buscorerev 72) on PCIe; Bluetooth
+  `btbcm`/`hci_uart`; modem **s5123 over PCIe** (CPIF-NR1, boot image over
+  SPI bus 9); AoC `aoc.bin` 13820614-polygon, 69 services; PMIC S2MPG10 and
+  S2MPG11; charger MAX77759, gauge `max1720x`; NFC ST54J; fingerprint Goodix;
+  GPU `mali_kbase`. So oriole differs from raven in the panel, the touch
+  controller and the board glue; the rest of raven's gs101 branches apply.
+
+### The factory image (F2/)
+
+- **`vbmeta.img`**: SHA256_RSA4096, rollback index 1783209600 (2026-07-05),
+  flags 0, chains `boot` (location 2), `vbmeta_system` (1), `vbmeta_vendor`
+  (3); hash descriptors for abl, bl1, bl2, bl31, dtbo, gsa, ldfw, pbl, tzsw,
+  vendor_boot, vendor_dlkm. **`boot.img` carries a signed footer**
+  (SHA256_RSA4096, rollback index 1783209600, original size 16629760, padded
+  to 0x4000000, `security_patch` 2026-07-05); `vendor_boot` (31936512) and
+  `dtbo` (1860257) carry unsigned footers (NONE). So, as on bluejay, slot B's
+  `boot` needs a footer and the other two don't: `device.conf` now has
+  `AVB_FOOTERS="boot:0x4000000"`, `AVB_ROLLBACK_INDEX=1783209600`,
+  `AVB_SECURITY_PATCH=2026-07-05` and `OS_PATCH_LEVEL=2026-07`, this build's
+  own values, never higher. A phone on a newer stock build has that build's
+  index (bluejay's notes read 1791158400 / 2026-10-05 from CP3A.261005.002.A1,
+  the same build id as oriole's current image [I]). On an unlocked phone a
+  lower index is a verification error libavb continues past; a missing
+  footer is not.
+- **`dtbo.img`**: 18 entries, page 4096, as 2026-10-14 read from CP3A;
+  entry 0 is 0x20304/0x10000 with `samsung,s6e3fc3` and `st,fts` (the phone's
+  entry), 1-5 the other oriole boards, 6-11 raven, 12-17 development boards.
+- **`vendor_boot`**: header v4, page 0x800, two DTBs (`soc_id` 0x9845000 and
+  0x9845001, compatible `google,gs101`, no model), stock `/chosen/bootargs`
+  as 2026-10-14 recorded. `vendor.img` is ext4 (the debugfs path).
+- **`tools/extract-vendor-firmware -d oriole` and `tools/extract-vendor-chroot
+  -d oriole`** (added today: raven's map with the board `google,gs101-oriole`)
+  stage BCM4389C1 Wi-Fi 20.101.90 with the ROW NVRAM and CLM (SKU GB7N6 is a
+  ROW SKU, as in husky's table), the BCM4389C1 Bluetooth patch, `aoc.bin`,
+  the CS35L41 protection firmware with distinct top and bottom tunings, the
+  CS40L25A clab firmware and wavetable, the AoC sensor registry
+  (`oriole_dvt.reg` and the other revisions), the gnss chroot (262 files) and
+  the modem chroot (893 files, `fstab.gs101`). `tools/phone-provision -d
+  oriole` runs raven's steps with the device's own names.
+
+### Install consequences
+
+- `tools/install-phone` wants the current slot `a`: `fastboot --set-active=a`,
+  one Android boot from A, then the NV backup (an Android boot changes `efs`
+  and `persist`, raven's 2026-10-15 note), then the install. Never take an
+  Android OTA afterwards: it writes slot B.
+- The ABL reports one bootloader version, so `install-phone` takes
+  `--bootloader-slots-match slider-17.0-15199431` once the other slot's has
+  been read in fastboot.
+- The factory image for the firmware is the phone's own build
+  (`oriole-cp2a.260705.006`), not the newest: the AoC firmware is
+  GSA-authenticated and the modem's vendor tree pairs with the radio in
+  `modem_a`, both from the bootloader package ABL and the radio came with.
+
 ## 2026-10-31: build provenance and recovery limits
 
 This describes the unpublished stack in the October 30 smoke report. It is
