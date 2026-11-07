@@ -69,7 +69,7 @@ profile_lists() {
     modem)
       VENDOR_BINS=(bin/cbd bin/rfsd)
       # gs201 keeps the modem image mount in fstab.modem, gs101 in its main fstab
-      if [[ $DEVICE == raven ]]; then MODEM_FSTAB=etc/fstab.gs101; else MODEM_FSTAB=etc/fstab.modem; fi
+      if [[ $DEVICE == raven || $DEVICE == oriole ]]; then MODEM_FSTAB=etc/fstab.gs101; else MODEM_FSTAB=etc/fstab.modem; fi
       VENDOR_FILES=(etc/init/cbd.rc etc/init/rfsd.rc "$MODEM_FSTAB" build.prop)
       VENDOR_DIRS=()
       # The modem's carrier profiles: cfg.db (omamobile-sitd picks the SIM's
@@ -170,7 +170,7 @@ Usage: extract-vendor-chroot -p PROFILE [-d DEVICE] [-o OUTDIR] [-w WORKDIR] [-f
   -o DIR   output directory (default: ./out/vendor-chroot-PROFILE)
   -w DIR   scratch directory for vendor.img and system.img, about 2.5 GB
            (default: a temp dir in \$TMPDIR)
-  -d DEV   cheetah (default), raven (gnss and modem so far) or tegu
+  -d DEV   cheetah (default), raven or oriole (gnss and modem so far) or tegu
            (gnss-slsi and modem so far)
   -f       skip the device checks
 
@@ -200,9 +200,9 @@ shift $((OPTIND - 1))
 [[ $# -eq 1 && -n $PROFILE ]] || { usage >&2; exit 2; }
 case $DEVICE in
   cheetah) ;;
-  raven) [[ $PROFILE == gnss || $PROFILE == modem ]] || die "raven: gnss and modem profiles only so far" ;;
+  raven|oriole) [[ $PROFILE == gnss || $PROFILE == modem ]] || die "$DEVICE: gnss and modem profiles only so far" ;;
   tegu) [[ $PROFILE == gnss-slsi || $PROFILE == modem ]] || die "tegu: gnss-slsi and modem profiles only so far" ;;
-  *) die "unknown device $DEVICE (cheetah, raven or tegu)" ;;
+  *) die "unknown device $DEVICE (cheetah, raven, oriole or tegu)" ;;
 esac
 profile_lists "$PROFILE"
 [[ -n $OUT ]] || OUT="./out/vendor-chroot-$PROFILE"
