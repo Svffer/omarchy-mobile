@@ -47,7 +47,7 @@
 # A first install (cheetah with no phone-config.tar in the backup directory;
 # nothing here makes one, only the backup taken before the rename has it, so
 # a later reinstall counts too) has no backup to restore from, so
-# --nv-backup DIR is required, as on raven:
+# --nv-backup DIR is required, as on raven and oriole:
 # the owner's read-only backup of the modem's partitions, taken and stored
 # off the repository by the owner with tools/nv-backup (docs/INSTALL.md
 # step 6; device/cheetah/REINSTALL-RUNBOOK.md section 4a). Its SHA256SUMS
@@ -72,7 +72,8 @@
 #                  (with --restore-td, also a TD already on the phone)
 #   --dry-run      stage locally and print every extraction and push; touch
 #                  nothing on the phone
-#   -d DEV         cheetah (default) or raven. Raven (device/raven): the
+#   -d DEV         cheetah (default), raven or oriole. Raven (device/raven)
+#                  and oriole (device/oriole, the same gs101 steps): the
 #                  firmware (Wi-Fi, Bluetooth, the AoC, the speaker amplifiers),
 #                  the AoC sensor registry and the gnss and modem chroots from
 #                  the factory image; the modem's per-phone files, its board id
@@ -80,11 +81,12 @@
 #                  --nv-backup); then the services cheetah's setup step
 #                  enables, but speaker protection. No fingerprint or camera
 #                  yet
-#   --getprop FILE raven: stock Android's getprop capture (default
-#                  ~/android/reference/raven-stock/getprop.txt)
+#   --getprop FILE raven, oriole: an Android getprop capture of this phone
+#                  (stock or LineageOS: the three keys read are ro.boot.*
+#                  values ABL sets; default ~/android/reference/<DEV>-stock/getprop.txt)
 #   --nv-backup DIR  the read-only NV backup with SHA256SUMS. Cheetah: a
 #                  first install only (no default). Raven: default the
-#                  newest ~/android/reference/raven-backup-*
+#                  newest ~/android/reference/<DEV>-backup-*
 # Test seams: PHONE_SSH, the command that runs a shell command on the phone
 # (default tools/phone-ssh), and PHONE_BOOTCONFIG, the file on the phone
 # that a first install reads the board id from (default /proc/bootconfig).
@@ -98,7 +100,7 @@ die() { printf '\e[31merror:\e[0m %s\n' "$*" >&2; exit 1; }
 
 backup=$HOME/android/reference/phone-backup-20261013
 work=${XDG_CACHE_HOME:-$HOME/.cache}/omamobile-provision
-getprop=$HOME/android/reference/raven-stock/getprop.txt
+getprop=""
 nv_backup=""
 dry=0 skip_extract=0 fingerprint=0 restore_td=0 import_home=0 restore_config=0 restore_wifi=0 waves=0 keep=0 force=0 backup_given=0
 user="" factory="" device=cheetah
@@ -132,11 +134,12 @@ done
 [[ -z $factory || -f $factory ]] || die "no $factory"
 ((restore_td == 0 || fingerprint)) || die "--restore-td goes with --fingerprint"
 [[ -n $factory ]] && factory=$(readlink -f "$factory")
-[[ $device == cheetah || $device == raven ]] || die "unknown device $device (cheetah or raven)"
+[[ $device == cheetah || $device == raven || $device == oriole ]] || die "unknown device $device (cheetah, raven or oriole)"
+[[ -n $getprop ]] || getprop=$HOME/android/reference/$device-stock/getprop.txt
 [[ $device == cheetah ]] || ((skip_extract == 0)) || die "-d $device needs the factory image"
-# Raven's run does none of cheetah's backup and fingerprint steps: refuse
-# their options rather than ignore them and report "Done"
-if [[ $device == raven ]]; then
+# Raven's and oriole's run does none of cheetah's backup and fingerprint
+# steps: refuse their options rather than ignore them and report "Done"
+if [[ $device != cheetah ]]; then
   unsupported=()
   ((fingerprint)) && unsupported+=(--fingerprint)
   ((restore_td)) && unsupported+=(--restore-td)
@@ -146,7 +149,7 @@ if [[ $device == raven ]]; then
   ((waves)) && unsupported+=(--with-waves)
   ((force)) && unsupported+=(--force)
   ((backup_given)) && unsupported+=(--backup)
-  ((${#unsupported[@]} == 0)) || die "-d raven doesn't support ${unsupported[*]} (cheetah only)"
+  ((${#unsupported[@]} == 0)) || die "-d $device doesn't support ${unsupported[*]} (cheetah only)"
 fi
 
 phone() { "$PHONE_SSH" "$@"; }
@@ -187,7 +190,7 @@ SH
 
 # --- Inputs ------------------------------------------------------------------
 # A first install (cheetah, no phone-config.tar): the NV checksums come from
-# the owner's read-only backup (--nv-backup, as on raven), the board id from
+# the owner's read-only backup (--nv-backup, as on raven and oriole), the board id from
 # the phone itself. The backup is checked here, before the phone is
 # contacted; the board id as soon as the phone answers, before any push.
 first_install=0
@@ -307,17 +310,19 @@ push_tree() {
   DID+=("pushed $n files to $dest")
 }
 
-# --- Raven: the firmware, the sensor registry and the services, nothing else --
-if [[ $device == raven ]]; then
+# --- Raven and oriole: the firmware, the sensor registry and the services,
+# nothing else (the gs101 phones share these steps; tools/extract-* take the
+# device for the board suffix and the android-info.txt check) --
+if [[ $device == raven || $device == oriole ]]; then
   say "Extracting from $(basename "$factory") (on this laptop)"
   if ((dry)); then
-    note "would run: tools/extract-vendor-firmware -d raven -o $W/fw -w $W $factory"
+    note "would run: tools/extract-vendor-firmware -d $device -o $W/fw -w $W $factory"
   else
-    tools/extract-vendor-firmware -d raven -o "$W/fw" -w "$W" "$factory" > "$W/extract.log" 2>&1 ||
+    tools/extract-vendor-firmware -d "$device" -o "$W/fw" -w "$W" "$factory" > "$W/extract.log" 2>&1 ||
       { tail -20 "$W/extract.log"; die "extraction failed"; }
-    tools/extract-vendor-chroot -d raven -p gnss -o "$W/chroot-gnss" -w "$W" "$factory" > "$W/extract.log" 2>&1 ||
+    tools/extract-vendor-chroot -d "$device" -p gnss -o "$W/chroot-gnss" -w "$W" "$factory" > "$W/extract.log" 2>&1 ||
       { tail -20 "$W/extract.log"; die "extraction failed (gnss chroot)"; }
-    tools/extract-vendor-chroot -d raven -p modem -o "$W/chroot-modem" -w "$W" "$factory" > "$W/extract.log" 2>&1 ||
+    tools/extract-vendor-chroot -d "$device" -p modem -o "$W/chroot-modem" -w "$W" "$factory" > "$W/extract.log" 2>&1 ||
       { tail -20 "$W/extract.log"; die "extraction failed (modem chroot)"; }
   fi
   # The modem's per-phone files, staged (never printed: the board id and
@@ -325,7 +330,7 @@ if [[ $device == raven ]]; then
   [[ -f $getprop ]] || die "no stock getprop capture $getprop (--getprop)"
   if [[ -z $nv_backup ]]; then
     # the newest backup; none is fine until here (cheetah never needs one)
-    backups=("$HOME"/android/reference/raven-backup-2*)
+    backups=("$HOME"/android/reference/"$device"-backup-2*)
     [[ -e ${backups[0]} ]] && nv_backup=$(printf '%s\n' "${backups[@]}" | sort | tail -1)
   fi
   [[ -f $nv_backup/SHA256SUMS ]] || die "no NV backup with SHA256SUMS in '${nv_backup}' (--nv-backup)"
@@ -374,7 +379,7 @@ if [[ $device == raven ]]; then
     phone "for u in $units; do systemctl cat \$u >/dev/null 2>&1 && systemctl enable \$u >/dev/null 2>&1 && echo enabled \$u; done; true" |
       while read -r l; do note "$l"; done
   fi
-  say "Done (raven)"
+  say "Done ($device)"
   for d in "${DID[@]}"; do note "$d"; done
   exit 0
 fi
