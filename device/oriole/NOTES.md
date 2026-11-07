@@ -113,6 +113,39 @@ unless marked. Captures stay in `~/android/reference/`, never here.
   the modem chroot (893 files, `fstab.gs101`). `tools/phone-provision -d
   oriole` runs raven's steps with the device's own names.
 
+### The descriptor for the first boot of slot B
+
+Three changes from raven's experience, before any oriole boot, each [I]
+until oriole's first light says otherwise:
+
+- **No `earlycon`** on `VENDOR_CMDLINE`: raven's ABL passes the vendor_boot
+  command line on, and earlycon's writes to the retail phone's unclocked
+  UART hung the SoC before any console existed (raven's BRINGUP-M1 section
+  7, tries 1-3). Oriole's ABL behaves the same way around the command line
+  (it appends `console=null` and the panel name, O/). `regulator_ignore_unused`
+  joins, as postmarketOS boots both phones with it.
+- **`INITRAMFS_MODULES`**: raven's six (the PMIC over ACPM, the MAX77759
+  core, nvmem and reboot-mode), so the simple-framebuffer gets its rails
+  and `reboot-to bootloader` reaches fastboot. Oriole has the same
+  S2MPG10/11 and MAX77759 (O/ dmesg).
+- **`NV_PARTS` and `NV_BACKUP_EXTRA`**: cheetah's set, all seven present on
+  this phone (O/), so `tools/nv-backup` works from the first Linux boot. A
+  baseline copy of the seven was taken read-only from LineageOS over adb
+  root on 2026-11-08 (`~/android/reference/oriole-backup-20261108`,
+  SHA256SUMS in phone-provision's format); `efs`, `efs_backup`,
+  `modem_userdata` and `persist` were mounted at the time, so the copy
+  after the last Android boot, from Linux, is the one provisioning uses.
+
+Left unset on purpose: `SIMPLEFB_TRIG_CON` (gs101's DECON register is read on
+a booted oriole before any write), `USB_SWITCH` (raven's switch read closed at
+hand-off) and `INITRAMFS_FB_WAIT`. The published kernel's USB description is
+upstream's (`dr_mode = "otg"`, `orientation-switch`); raven needed a NOT FOR
+MERGE peripheral override before `omamobile` gained `4d015fb82` (the PHY
+keeps VBUS valid until Type-C reports), and whether upstream's now enumerates
+is raven's open U1 (USB-PLAN section 3). Oriole's first boot is that test for
+gs101: no USB device on the laptop means U1 failed here too, and the next
+boot carries the override as a local kernel change.
+
 ### Install consequences
 
 - `tools/install-phone` wants the current slot `a`: `fastboot --set-active=a`,
