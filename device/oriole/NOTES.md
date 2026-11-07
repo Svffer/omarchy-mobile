@@ -9,6 +9,68 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
+## 2026-11-08: first light on the published kernel (M1 done)
+
+Slot B of the Pixel 6 above boots the published kernel from `omamobile`
+(`7.3.0-rc6-omamobile-push1-g25368bff83ce`, kernel-2026.11.01-41, built with
+the pinned toolchain), with the shared initramfs and the descriptor as
+committed today (no `SIMPLEFB_TRIG_CON`, no `USB_SWITCH`). Slot A holds the
+owner's LineageOS 24.0 (the phone's OTA had left A without a system; the same
+OTA sideloaded once more put it there and made A current and successful).
+Images from `DEVICE=oriole bin/omamobile images`; `bin/omamobile fastboot`
+then `flash` wrote `boot_b`, `vendor_boot_b` and `dtbo_b`, set B active and
+rebooted. All [V] on that phone; captures in `~/android/reference/oriole-m1-20261108/`.
+
+- **Sign of life**: the laptop saw a CDC NCM + ACM gadget ("Pixel 6",
+  "Omarchy Mobile") and SSH answered at 172.16.42.1. `uname -a`:
+  `7.3.0-rc6-omamobile-push1-g25368bff83ce`, compatible `google,gs101-oriole
+  google,gs101`. Up 566 s before the deliberate reboot below, no watchdog
+  reset. Both cluster watchdogs appear (`/dev/watchdog0`, `watchdog1`).
+- **USB: upstream's description works on gs101 (raven's U1, USB-PLAN
+  section 3, passes here)**: with `omamobile`'s `4d015fb82` and no override,
+  UDC `configured`, `high-speed`, `11110000.usb-role-switch` reads `device`.
+  `dmesg` shows the TCPC/PHY/dwc3 dependency cycles fixed by the kernel, no
+  USB error. The host side needs the address by hand or a NetworkManager
+  profile with `ipv4.method manual` (the documented `shared` needs dnsmasq).
+- **Storage guard**: allowlist `boot_b vendor_boot_b dtbo_b userdata`; 53
+  block nodes, exactly those four writable, `/dev/sda` removed, `sdb`-`sdd`
+  read-only. Nothing mounted.
+- **PMIC and framebuffer**: `exynos-mailbox`, `acpm-protocol` and `sec-acpm`
+  are built in on this kernel (the initramfs says so), 72 regulators
+  registered, `fb0` is `simpledrmdrmfb` and `/dev/dri/card0` exists. The
+  screen stays on ABL's logo: DECON's trigger is still masked (below).
+- **Reboot path**: the three MAX77759 modules loaded from the initramfs
+  (`max77759`, `nvmem-max77759`, `nvmem-reboot-mode`, `reboot-mode` under
+  `/sys/bus/nvmem/devices/max77759-nvmem.3.auto`); `reboot-to bootloader`
+  reached fastboot in 6 s; `fastboot --set-active=b` and `fastboot reboot`
+  brought SSH back 16 s after the command, `/proc/uptime` 2.3 s at the first
+  answer. In fastboot after the first Linux boot: `slot-successful:b: no`,
+  `slot-retry-count:b: 2` (ABL does not seem to spend a retry on a
+  `reboot-to bootloader`), slot A `successful: yes`. Nothing marks B
+  successful (no `omamobile-bootctl` for oriole, on purpose: PR #222 review).
+- **DECON's trigger, read before any write**: `0x1c300030` reads **`0x3070`**
+  at hand-off, `0x1c300000` `0x06010000`, `0x1c300004` `0x3`. `0x3070` is the
+  value cheetah's DECON0 `TRIG_CON` reads before the initramfs writes
+  `0x3061` (cheetah's DISPLAY-PLAN: TE bits plus `HW_TRIG_MASK_DECON`,
+  `HW_TRIG_EN` clear); raven's reads `0x3071` dark and `0x3061` after the
+  write (POWER-PLAN). So `SIMPLEFB_TRIG_CON="0x1c300030 0x3061"` is the
+  next, single change, with `INITRAMFS_FB_WAIT=1`.
+- **Kernel log**: 418 lines, no oops, BUG or WARN. Three notes:
+  `s2mpg10-gpio`/`s2mpg11-gpio: Failed to locate of_node` (the GPIO cells
+  without DT nodes, as on raven), a duplicate `debug_kinfo_reserved@fd3fe000`
+  / `debug-kinfo-reserved@fd3fe000` reserved-memory overlap (two spellings of
+  one node: ABL's injected one and the DT's), and "unable to open an initial
+  console" (`console=null`).
+- **Not there yet**: no thermal zones and no power supply (the published
+  kernel has no gs101 ACPM thermal or MAX1720x gauge for oriole; the kernel
+  fragment's symbols are warnings here), `tools/phone-smoke` needs bash and
+  so the Arch root (stage 2). 8 CPUs online, 7.8 GiB RAM.
+
+Next, one change per boot: the DECON trigger (screen console and splash),
+then the Arch root on `userdata` (`tools/build-packages`, `build-rootfs`,
+`install-phone`), then touch (ST FTS) and the panel (S6E3FC3) on the kernel
+side.
+
 ## 2026-11-08: stage 0 closed on an unlocked Pixel 6 (LineageOS, root) and its factory image
 
 Read-only queries of a retail Pixel 6 (MP1.0, SKU GB7N6, bootloader unlocked)
