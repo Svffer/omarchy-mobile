@@ -46,9 +46,11 @@ kernel `g3913dd770d14` with the battery node (4520 mAh, 4.45 V, 1.33 A):**
 - **C3 passed**: `modprobe -r max17042_battery`: within 30 s "no reading
   from max170xx_battery: charging inhibited", the charger `Discharging`;
   the gauge back: the band logged again, `Charging`, +457 mA.
-- **C4**: device-oriole 0.2.4 (raven's `omamobile-charger.conf` and the
-  guard script, the charger off the blacklist) installed for the next boot.
-  Pending: the charger at boot; C5 (a full charge on a wall charger, done at
+- **C4 passed** (seventh boot, device-oriole 0.2.5: 0.2.4 forgot to stage
+  the guard script): `max77759_charger` loads at boot after the gauge, the
+  same four log lines, `omamobile-charge-guard status`: guard Y, 30.5 C,
+  4426 mV, 267 mA, `Charging (Fast, health Good)`, float 4450 mV, fast
+  charge 1333 mA. Pending: C5 (a full charge on a wall charger, done at
   100 %) needs Wi-Fi or an unattended run.
 
 ## 2026-11-08: thermal zones, the fuel gauge, the GPU from boot (fifth boot)
