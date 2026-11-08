@@ -16,6 +16,7 @@ for file in usr/bin/reboot-to usr/bin/omamobile-setup-system \
   usr/lib/systemd/sleep.conf.d/20-omamobile-unqualified-sleep.conf \
   etc/UPower/UPower.conf.d/20-omamobile-critical-power.conf \
   usr/lib/modprobe.d/omamobile-oriole-bringup.conf \
+  usr/lib/modprobe.d/omamobile-wifi.conf \
   etc/pacman.d/omamobile-mirrorlist \
   usr/share/licenses/omamobile-device-oriole/LICENSE; do
   test -f "$t/root/$file"
@@ -80,3 +81,10 @@ grep -qx 'options gs_dsim_cmd allow_tx=1' vendor/modprobe.d/omamobile-oriole-dis
   || fail "the DSIM command path may send brightness to the panel"
 test -f "$t/root/usr/lib/udev/rules.d/20-omamobile-display.rules" || fail "the display udev rules are installed"
 pass "the DSIM sends DCS, the video group owns bl_power and the touch inhibit"
+
+# Wi-Fi (WIFI-PLAN W0): the PCIe controller, PHY and brcmfmac stay out of the
+# boot until the link has been seen up by hand
+for m in pcie_gs201 phy_gs201_pcie brcmfmac; do
+  grep -qx "blacklist $m" vendor/modprobe.d/omamobile-wifi.conf || fail "$m is blacklisted until W3 passes"
+done
+pass "the Wi-Fi PCIe stack is loaded by hand only"
