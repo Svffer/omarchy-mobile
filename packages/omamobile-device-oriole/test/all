@@ -69,5 +69,5 @@ grep -qx 'options max77759_charger default_ilim_ua=500000 temp_guard=1' vendor/m
   || fail "the charger loads with its input limit and the temperature guard"
 grep -qx 'softdep max77759_charger pre: max17042_battery' vendor/modprobe.d/omamobile-charger.conf \
   || fail "the gauge loads before the charger"
-test -x bin/omamobile-charge-guard || fail "omamobile-charge-guard is installed"
+test -x "$t/root/usr/bin/omamobile-charge-guard" || fail "omamobile-charge-guard is installed"
 pass "the charger loads with its guard"
