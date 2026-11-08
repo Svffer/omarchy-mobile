@@ -184,7 +184,12 @@ case $DEVICE_OPT in
     # (device/oriole/NOTES.md); only the board suffix and codename differ.
     BOARD="google,gs101-$DEVICE_OPT"
     DEVICE="$DEVICE_OPT"
+    # Oriole's touch controller (ST FTS "FTM5", device/oriole/TOUCH-PLAN.md)
+    # has its own firmware in the vendor image; the driver requests it by
+    # this name. Raven's S6SY79x takes none.
+    [[ $DEVICE == oriole ]] && TOUCH_FW=("firmware/ftm5_fw_o6.ftb|ftm5_fw_o6.ftb") || TOUCH_FW=()
     MAP=(
+      ${TOUCH_FW[@]+"${TOUCH_FW[@]}"}
       "firmware/fw_bcmdhd.bin|brcm/$FW_BASE.$BOARD.bin"
       "firmware/bcmdhd.cal_ROW|brcm/$FW_BASE.$BOARD.txt"
       "firmware/bcmdhd_clm.blob_ROW|brcm/$FW_BASE.$BOARD.clm_blob"
