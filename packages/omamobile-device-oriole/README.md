@@ -19,7 +19,8 @@ max77759_charger, gpio_max77759, arm_dsu_pmu, at24 and max17042_battery.
 The [coldplug audit](../../device/oriole/NOTES.md) found matching unbound devices and confirmed that
 modprobe dry runs refused these modules; it did not load them or establish
 their behavior. `clk_acpm` left the list on 2026-11-08: it is the GPU's clock
-provider over ACPM, and panfrost deferred forever without it. This package does not qualify the underlying hardware.
+provider over ACPM, and panfrost deferred forever without it; `max17042_battery` left it the same day,
+the gauge reporting the battery as on raven. This package does not qualify the underlying hardware.
 Built-in drivers are outside modprobe policy.
 
 No battery startup, staged boot checker, automatic boot-success, radio,
