@@ -76,3 +76,7 @@ pass "the charger loads with its guard"
 grep -qx 'options gs_decon max_refresh=60' vendor/modprobe.d/omamobile-oriole-display.conf \
   || fail "gs-decon is capped at 60 Hz on the S6E3FC3"
 pass "the display stack loads at boot at 60 Hz"
+grep -qx 'options gs_dsim_cmd allow_tx=1' vendor/modprobe.d/omamobile-oriole-display.conf \
+  || fail "the DSIM command path may send brightness to the panel"
+test -f "$t/root/usr/lib/udev/rules.d/20-omamobile-display.rules" || fail "the display udev rules are installed"
+pass "the DSIM sends DCS, the video group owns bl_power and the touch inhibit"
