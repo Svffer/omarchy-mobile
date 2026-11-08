@@ -92,10 +92,19 @@ sink) and calls (a logind inhibitor) were refused already. On the phone,
 with the WH-1000XM4 paused, the check sees `bluez_output....1 SUSPENDED`.
 Headset calls still need `CONFIG_BT_RFCOMM` in the kernel.
 
+**S6, the push (nineteenth boot, `g1b68efca2dd9` with `CONFIG_BT_RFCOMM=m`,
+`mem_sleep_default=s2idle`):** `mem_sleep` reads `[s2idle] deep` at boot;
+`rfcomm.ko` loads on demand (`bt-proto-3`) and an RFCOMM socket opens, so
+bluez can offer the headset profiles; Wi-Fi joined, Bluetooth powered,
+90 Hz. Then, for the owner, the shell's auto sleep turned on (`omarchy-toggle
+omamobile-sleep on`) and Suspend unhidden in the menu (`suspend-off` off);
+`omamobile-sleepd check` answers "the lock isn't secure" with the phone
+unlocked, as it should.
+
 ## 4. Next
 
 | Step | What | Pass |
 | --- | --- | --- |
-| S6 | the next push: `mem_sleep` reads `[s2idle] deep` at boot | - |
 | S7 | battery: awake vs asleep from the gauge's charge counter, cable out | a number to compare with raven's 293 mA |
-| S8 | the shell's auto sleep (`omamobile-sleepd`, toggle `suspend-off` off) | sleeps when locked and dark, wakes on Power |
+| S8 | the shell's auto sleep, on since S6: the owner locks the phone and leaves it (no SSH open) | sleeps 30 s after the screen goes dark, wakes on Power to the PIN pad |
+| B-HFP | headphones reconnect with RFCOMM in the kernel | bluez offers the Hands-Free profile, no "Protocol not supported" |
