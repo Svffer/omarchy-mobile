@@ -9,6 +9,37 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
+## 2026-11-08: the Mali-G78 under panfrost (GPU), and Plymouth
+
+Fourth boot of slot B, pushed from the Arch root with `bin/omamobile push`
+(images and modules over SSH, read back): kernel
+`7.3.0-rc6-omamobile-push1-g08d671cd4e0d` from a local branch on
+`omamobile` whose one commit enables `&gpu` in `gs101-oriole.dts` on the
+S2MPG10/11 rails raven uses (`mali-supply` buck2s, `g3d-l2-supply` buck8s,
+`g3d-m-supply` ldo1s, `int-m-supply` buck7m), plus device-oriole 0.2.1 and
+the Plymouth command line. [V] on the phone:
+
+- **Plymouth**: with `quiet splash plymouth.graphical plymouth.force-scale=1
+  vt.global_cursor_default=0` and the `plymouth quit --retain-splash`
+  drop-in, `plymouth-start` and `plymouth-quit` are active, no segfault,
+  `systemctl is-system-running` says `running` with no failed unit. SSH 6 s
+  into the boot.
+- **panfrost deferred** on `get clock failed -517`: the gpu node's clock is
+  `GS101_CLK_ACPM_GPU` from the ACPM clock provider, `clk_acpm`
+  (`CONFIG_EXYNOS_ACPM_CLK=m`), which PR #222's package blacklisted and
+  blocked with `install /bin/false`. `modprobe --ignore-install clk_acpm`
+  and the GPU probed at once: `mali-g78 id 0x9202 major 0x0 minor 0x1`,
+  `shader_present=0x779fff l2_present=0x1` (MP20), `renderD128` on
+  `1c500000.gpu`, clock 151 MHz (no DVFS yet: raven's kernel #189 scales it
+  through ACPM). device-oriole 0.2.2 drops `clk_acpm` from the blacklist.
+- **Hyprland on the GPU**: after `systemctl restart sddm`, Hyprland holds
+  `renderD128` open (7 fds) next to `card0` (simpledrm scanout); the earlier
+  "failed to create dri2 screen" warnings are gone, only panvk's
+  "Mali-G78 not supported" remains (Vulkan is not used). The owner's lock
+  screen came back after the restart.
+- Still no thermal zones (no `GS101_ACPM_THERMAL` driver probing here) and
+  no battery (`max17042_battery` blacklisted by the package; raven loads it).
+
 ## 2026-11-08: the Arch root on userdata (M2): installed with tools/install-phone
 
 A contributor build, all local (RELEASES §10): `keys/oriole` from
