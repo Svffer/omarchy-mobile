@@ -1,12 +1,11 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 6 (oriole): Wi-Fi, then Bluetooth
 
-Status (2026-11-08): **W1-W4 pass by hand** (section 6): on kernel
-`g7330c3817bea` every stage ran clean under the watchdog, the link came up
-Gen2 x1 on the first try, brcmfmac runs firmware 20.101.90 with oriole's
-CLM, and the owner's network joined at 5 GHz with Wi-Fi as the default
-route; W5 (the stack at boot, device-oriole 0.2.10 installed) is the next
-boot.
+Status (2026-11-08): **Wi-Fi works and comes up at boot** (W1-W5, section
+6): kernel `g7330c3817bea`, device-oriole 0.2.10; the link is up Gen2 x1 at
+4.1 s, brcmfmac runs firmware 20.101.90 with oriole's CLM at 5.3 s, and
+NetworkManager has joined the owner's 5 GHz network before SSH answers, with
+Wi-Fi as the default route and the USB link behind it. Next: Bluetooth.
 Bluetooth: raven's path ([device/raven/BLUETOOTH-PLAN.md](../raven/BLUETOOTH-PLAN.md)),
 after Wi-Fi.
 
@@ -108,8 +107,13 @@ rails, so the SoC nodes are gs101's and the board block is oriole's.
   (channel 40, 5200 MHz), signal 81 %, 1170 Mbit/s, WPA2, a DHCP address,
   Wi-Fi the default route (metric 600) with the USB link behind it (2000);
   4/4 pings to 1.1.1.1 at 8.9 ms, DNS and a public host at 32 ms. The
-  profile autoconnects. device-oriole 0.2.10 (the stack at boot) installed;
-  W5 is the next boot.
+  profile autoconnects.
+- **W5** (seventeenth boot, device-oriole 0.2.10, only `pcie_gs201_sysmmu`
+  blacklisted): `pcie_gs201`, `phy_gs201_pcie` and `brcmfmac` loaded by
+  themselves, "link up on try 1, PCIe Gen.2 x1" at 4.1 s, the firmware
+  banner at 5.3 s, `wlp1s0` connected and the default route by 22 s of
+  uptime (when SSH answered), 3/3 pings at 9.1 ms, `systemctl
+  is-system-running` `running`.
 - The three watchdog disarms each printed "busy" once and succeeded on the
   tool's retry. Logs: `logs/wifi-w1-20261108-1409*-s{1,2,3,4}.log`,
   `-1410*-s5.log` (5731 lines with brcmfmac's debug on; `debug` was reset

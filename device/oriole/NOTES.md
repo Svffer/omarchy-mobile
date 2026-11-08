@@ -9,7 +9,7 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
-## 2026-11-08: Wi-Fi (W1-W4) on the BCM4389 over PCIe
+## 2026-11-08: Wi-Fi (W1-W5) on the BCM4389 over PCIe: works, up at boot
 
 Kernel `g7330c3817bea` (sixteenth boot): cheetah's PCIe controller and PHY
 drivers with gs101 variants (Google's `pcie-exynos-gs101-rc-cal.c` tuning),
@@ -19,9 +19,11 @@ stage by stage. [V]: every stage clean on the first run; link Gen2 x1 up on
 try 1; `14e4:4441` enumerated; brcmfmac runs firmware 20.101.90 (c1) with
 the `Google.O6sub6` CLM, `wlp1s0` under NetworkManager, 8 networks in a
 scan; the owner joined their 5 GHz network (channel 40, 81 %, 1170 Mbit/s),
-Wi-Fi became the default route and pings run at 9 ms. Details and numbers:
-WIFI-PLAN.md section 6. Next: the stack at boot (device-oriole 0.2.10
-installed, W5), then Bluetooth on raven's path.
+Wi-Fi became the default route and pings run at 9 ms. **Seventeenth boot
+(W5, device-oriole 0.2.10): the stack loads by itself, link up at 4.1 s,
+firmware at 5.3 s, the network joined before SSH answered at 22 s.**
+Details and numbers: WIFI-PLAN.md section 6. Next: Bluetooth on raven's
+path.
 
 ## 2026-11-08: 90 Hz (D6) on modules swapped in by hand
 
