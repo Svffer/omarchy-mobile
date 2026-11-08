@@ -37,9 +37,13 @@ re-armed slot B. [V]:
 - **T3 passed**: the owner unlocked the shell's keypad and logged in by
   finger; a 5 s read of `event1` while touching gave about 280 events a
   second. `tools/phone-smoke`'s touch check to follow.
-- **T4 pending**: udev will not autoload the module: the SPI core's uevent
-  carries `spi:spi` and the driver has no `spi_device_id` ("SPI driver fts
-  has no spi_device_id for st,spi"); a table is being added.
+- **T4 passed** (`g504b4d5eafdb`): the SPI core reports the device as
+  `spi:spi` (the compatible's vendor prefix stripped) and matched no
+  `spi_device_id` ("SPI driver fts has no spi_device_id for st,spi"); with
+  a `"spi"` entry the module carries the `spi:spi` alias, udev loads it at
+  boot, "Probe Finished!" by 36 s, `input1: fts`, and the lock screen takes
+  the finger right after boot. Each push was preceded by `fastboot
+  --set-active=b`: the retry count read 0 every time before it.
 
 ## 2026-11-08: charging (raven's C1-C3 on oriole), and slot B's retries
 
