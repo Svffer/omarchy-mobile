@@ -9,6 +9,47 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
+## 2026-11-08: the Arch root on userdata (M2): installed with tools/install-phone
+
+A contributor build, all local (RELEASES §10): `keys/oriole` from
+`tools/local-key-init`, the published packages from `tools/fetch-published`
+(both channels carry the same 45; the pinned `aquamarine` 0.16.0 is in
+neither, so it was fetched from `rootfs/packages.pinned`'s URL, checked
+against the listed SHA-256 and imported), `omamobile-device-oriole` 0.2.0
+built from PR #222's tree, and `KERNEL_OUT=~/omamobile-kernel/out
+tools/build-rootfs --local oriole` (28 minutes; every image check passed).
+`tools/install-phone --reinstall --bootloader-slots-match
+slider-17.0-15199431` from the running initramfs (`bin/omamobile fastboot`
+first): the dry run printed exactly six commands; the real run wrote slot
+B's three images and `userdata`, set B active and rebooted. [V] on the
+phone above:
+
+- **First boot**: SSH at 62 s, hostname set, root on `/dev/sda27` (ext4,
+  grown to 225.7 GiB), the user created with the wheel, audio, input and
+  video groups; `omamobile-firstboot` finished at about 190 s. `systemctl
+  is-system-running` says `degraded` for two units: `plymouth-start`
+  (plymouthd segfaults "immediately after starting to daemonize", raven's
+  `console=null` crash: `plymouth.graphical` on the command line is the
+  fix, not yet applied here) and `systemd-firstboot`.
+- **The session**: SDDM autologin into `uwsm start ... Hyprland`; Hyprland
+  and quickshell (the Omarchy shell) run on simpledrm's `card0` with
+  software rendering: the published kernel enables no GPU node for oriole,
+  so Vulkan finds no device, zink fails and Mesa falls back. The owner's
+  look at the panel is the pass criterion for "Display" here, not the
+  logs.
+- **Storage guard under Arch**: still exactly `boot_b`, `vendor_boot_b`,
+  `dtbo_b` and `userdata` writable.
+- **pacman**: the `[omamobile]` channel is `local`; the phone refused the
+  index until the owner's key was added (`pacman-key --add`, `--lsign-key`),
+  as RELEASES §10 says.
+- **Internet over USB**: the phone routes through 172.16.42.2 with DNS
+  1.1.1.1 (the device package's networkd file). On an Omarchy laptop the
+  documented NetworkManager `shared` profile needs `dnsmasq` installed, and
+  ufw's `DEFAULT_FORWARD_POLICY=DROP` still blocks the forwarded TCP and
+  UDP (ICMP got through): `ufw route allow in on <usb-interface>` opens it.
+  Without that, firstboot's Omarchy step defers the Node.js install
+  ("Node.js install deferred (no network)") and the rest completes.
+
 ## 2026-11-08: the screen console (display, step 1) and the console font
 
 Second and third boots of slot B, one change each, flashed with
