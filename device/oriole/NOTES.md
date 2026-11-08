@@ -9,6 +9,48 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
+## 2026-11-08: charging (raven's C1-C3 on oriole), and slot B's retries
+
+**Slot B ran out of retries.** The sixth `bin/omamobile push` rebooted into
+slot A: ABL gives the slot two tries after `--set-active=b` (the last one
+was the `flash` of the first light), nothing marks B successful on oriole
+(no `omamobile-bootctl`, on hold per PR #222's review), and `push` reboots
+without re-arming. `fastboot getvar` then showed `slot-retry-count:b: 0`.
+Slot A's LineageOS can't mount `userdata` (it holds Omarchy's ext4 root
+now) and stops at Android's "Try again / Factory data reset" screen, with
+adb unauthorized: **slot A is no way back once Omarchy is on `userdata`**,
+only a way to fastboot, and **never take the factory reset there**. The way
+out was the buttons (Power + Volume Down about 20 s, then Volume Down for
+Fastboot Mode), `fastboot --set-active=b` (retry count back to 3 on this
+ABL) and `fastboot reboot` (which reports "Finished" but sometimes leaves
+the phone in fastboot; a second one, or Start on the phone, boots it).
+Until B can be marked successful, re-arm it from fastboot every other boot,
+or use `bin/omamobile fastboot` and `flash`, which activate B each time.
+
+**Charging, raven's gates (USB-PLAN section 4), on the laptop's USB port,
+kernel `g3913dd770d14` with the battery node (4520 mAh, 4.45 V, 1.33 A):**
+
+- **C1 passed**: boots as before (`running`, no failed unit), `/battery`
+  in the live DT and the PMIC's `monitored-battery`, the charger not loaded;
+  the gauge reads `Discharging`, 98 %, 4333 mV, -64 mA (the screen on).
+- **C2 passed**: `modprobe max77759_charger default_ilim_ua=500000
+  temp_guard=1`: "found: mode 0x5, float voltage 4350 mV, fast charge
+  1933420 uA, input limit 500000 uA" (the bootloader's settings, raven's C0
+  numbers exactly), "temperature guard on (max170xx_battery)", "battery
+  30.6 C, 4333 mV: band 20-42 C, float 4450 mV, charge 1333390 uA", "probed:
+  mode 0x5, float voltage 4450 mV, fast charge 1333390 uA". Within seconds
+  the gauge read `Charging`, +463 mA, and the owner saw the shell's charge
+  indicator. The guard's bands and tiers in the driver are oriole's stock
+  `google,chg-temp-limits`, `chg-cv-limits` and `chg-cc-limits` to the
+  number (checked against O/'s live DT).
+- **C3 passed**: `modprobe -r max17042_battery`: within 30 s "no reading
+  from max170xx_battery: charging inhibited", the charger `Discharging`;
+  the gauge back: the band logged again, `Charging`, +457 mA.
+- **C4**: device-oriole 0.2.4 (raven's `omamobile-charger.conf` and the
+  guard script, the charger off the blacklist) installed for the next boot.
+  Pending: the charger at boot; C5 (a full charge on a wall charger, done at
+  100 %) needs Wi-Fi or an unattended run.
+
 ## 2026-11-08: thermal zones, the fuel gauge, the GPU from boot (fifth boot)
 
 Kernel `7.3.0-rc6-omamobile-push1-g1d3bd6bf05b1` (local branch: the gpu
