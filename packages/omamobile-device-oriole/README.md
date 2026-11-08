@@ -14,11 +14,12 @@ networkd activation are also external prerequisites. USB has fallback metric
 2000, below ordinary Wi-Fi preference.
 
 All four sleep modes are disabled. UPower selects PowerOff on critical
-battery. Coldplug blocks alias and explicit modprobe for clk_acpm,
+battery. Coldplug blocks alias and explicit modprobe for
 max77759_charger, gpio_max77759, arm_dsu_pmu, at24 and max17042_battery.
 The [coldplug audit](../../device/oriole/NOTES.md) found matching unbound devices and confirmed that
 modprobe dry runs refused these modules; it did not load them or establish
-their behavior. This package does not qualify the underlying hardware.
+their behavior. `clk_acpm` left the list on 2026-11-08: it is the GPU's clock
+provider over ACPM, and panfrost deferred forever without it. This package does not qualify the underlying hardware.
 Built-in drivers are outside modprobe policy.
 
 No battery startup, staged boot checker, automatic boot-success, radio,

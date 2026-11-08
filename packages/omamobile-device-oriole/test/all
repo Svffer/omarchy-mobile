@@ -42,7 +42,7 @@ from pathlib import Path
 import sys
 root = Path(sys.argv[1])
 policy = (root/'usr/lib/modprobe.d/omamobile-oriole-bringup.conf').read_text().splitlines()
-for module in ('clk_acpm', 'max77759_charger', 'gpio_max77759', 'arm_dsu_pmu', 'at24', 'max17042_battery'):
+for module in ('max77759_charger', 'gpio_max77759', 'arm_dsu_pmu', 'at24', 'max17042_battery'):
     assert f'blacklist {module}' in policy
     assert f'install {module} /bin/false' in policy
 sleep = (root/'usr/lib/systemd/sleep.conf.d/20-omamobile-unqualified-sleep.conf').read_text().splitlines()
