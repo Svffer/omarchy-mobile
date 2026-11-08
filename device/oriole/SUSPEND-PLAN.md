@@ -84,6 +84,14 @@ reconnect logs "Unable to connect Hands-Free Voice gateway: socket(STREAM,
 RFCOMM): Protocol not supported": the kernel has no `CONFIG_BT_RFCOMM`, so
 headset calls (HFP/HSP) cannot work, asleep or awake.
 
+**Bluetooth audio and auto sleep (omamobile-shell 0.2.102):** the owner
+chose to keep headphones connected rather than save battery while they
+are: `omamobile-sleepd` refuses sleep while a `bluez_output` sink exists,
+paused or not ("Bluetooth audio is connected (...)"); playback (a RUNNING
+sink) and calls (a logind inhibitor) were refused already. On the phone,
+with the WH-1000XM4 paused, the check sees `bluez_output....1 SUSPENDED`.
+Headset calls still need `CONFIG_BT_RFCOMM` in the kernel.
+
 ## 4. Next
 
 | Step | What | Pass |
