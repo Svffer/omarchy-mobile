@@ -1,12 +1,13 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 6 (oriole): suspend
 
-Status (2026-11-08): **S1-S4 pass** on kernel `g1b68efca2dd9`: pm_test
-dry runs, a 30 s s2idle with an RTC wake, and ten 20 s cycles in a row with
-Wi-Fi kept connected through brcmfmac's D3 and Bluetooth up. device-oriole
-0.2.12 carries raven's sleep policy and hook; `mem_sleep_default=s2idle`
-is in the vendor cmdline for the next push. Next: `systemctl suspend` woken
-by the power key (S5, with the owner), then the shell's auto sleep.
+Status (2026-11-08): **S1-S5 pass** on kernel `g1b68efca2dd9`: pm_test
+dry runs, RTC-woken s2idle (one 30 s, then ten 20 s cycles) and
+`systemctl suspend` woken by the power key, Wi-Fi kept connected through
+brcmfmac's D3 and Bluetooth up every time. device-oriole 0.2.12 carries
+raven's sleep policy and hook; `mem_sleep_default=s2idle` is in the vendor
+cmdline for the next push (S6). Next: battery numbers (S7) and the shell's
+auto sleep (S8).
 
 ## 1. Approach
 
@@ -58,11 +59,19 @@ connection nodes too (`hci0:11`, `DEVTYPE=link`, created when the
 headphones connect), and their units failed. device-oriole 0.2.12 limits it
 to `DEVTYPE=host`; raven's package has the same rule.
 
+**S5, `systemctl suspend` and the power key (14:57, device-oriole 0.2.12):**
+with the owner holding the phone, `systemctl suspend -i` (logind, so the
+hook runs) with an RTC alarm 120 s out as a backstop. systemd-sleep froze
+`user.slice` and slept at 14:57:31; the owner pressed Power and it woke at
+14:57:57, **woken by IRQ 109, `gpa10-1 KEY_POWER`** (logged by the
+`omamobile-sleep` hook), before the alarm (cleared afterwards). brcmfmac's
+D3 ACK in 13.6 ms; afterwards Wi-Fi connected and pinging (8.9 ms),
+Bluetooth powered, no UFS error. The owner confirmed the button wakes it.
+
 ## 4. Next
 
 | Step | What | Pass |
 | --- | --- | --- |
-| S5 | with the owner: `systemctl suspend` (through logind, so the hook runs), an RTC alarm 120 s out as a backstop, the owner presses Power | woken by `gpio-keys` (KEY_POWER), the panel lights, the lock screen answers touch, Wi-Fi and Bluetooth back |
 | S6 | the next push: `mem_sleep` reads `[s2idle] deep` at boot | - |
 | S7 | battery: awake vs asleep from the gauge's charge counter, cable out | a number to compare with raven's 293 mA |
 | S8 | the shell's auto sleep (`omamobile-sleepd`, toggle `suspend-off` off) | sleeps when locked and dark, wakes on Power |
