@@ -9,6 +9,38 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
+## 2026-11-08: touch (ST FTS "FTM5"): T1-T3 pass with the imported driver
+
+Kernel branch `oriole-touch` (on `oriole-local`): ST's GPL FTS driver as
+postmarketOS's gs101 fork carries it (`drivers/input/touchscreen/fts_spi/`,
+`TOUCHSCREEN_ST_FTS_V521_SPI=m`, NOT FOR MERGE), without `fts_fw.h` and
+`fts_limits.h`, two ports for 7.3 (`of_get_named_gpio` through gpiolib's
+fwnode lookup; pinctrl states optional), and the SPI11 node from
+TOUCH-PLAN section 3. The firmware `ftm5_fw_o6.ftb` from the factory image
+in `/usr/lib/firmware/updates` (now in `tools/extract-vendor-firmware`'s
+oriole map). Boots eight to ten, each after `fastboot --set-active=b`
+re-armed slot B. [V]:
+
+- **T1 passed** (`g661cb95169d5`, the module blacklisted by a temporary
+  `/etc/modprobe.d` file): boots as before, `spi0.0` with modalias
+  `spi:spi`, no module loaded.
+- **T2**: the first `modprobe` probed and failed on "Target does not use
+  pinctrl -19": the driver insisted on `pmx_ts_active`/`pmx_ts_suspend`.
+  With pinctrl optional (`g80af30b86df9`; a force-inserted module is
+  refused, so another push): driver "spi ver: 5.2.4.1", irq gpio 678, reset
+  gpio 607, the firmware file parsed ("FILE Fw Version = 0049", config
+  0308, CX 0003), "Firmware in the chip newer or equal to the one to burn!
+  NO UPDATE", system reset, no CX or panel CRC error, "Sense ON", interrupt
+  enabled, "Probe Finished!", `input1: fts`, `/dev/input/event1`, udev
+  `ID_INPUT_TOUCHSCREEN=1`, Hyprland "Touch Device: fts". Harmless noise:
+  "can't find avdd-gpio", "Unable to get array size" (no config array).
+- **T3 passed**: the owner unlocked the shell's keypad and logged in by
+  finger; a 5 s read of `event1` while touching gave about 280 events a
+  second. `tools/phone-smoke`'s touch check to follow.
+- **T4 pending**: udev will not autoload the module: the SPI core's uevent
+  carries `spi:spi` and the driver has no `spi_device_id` ("SPI driver fts
+  has no spi_device_id for st,spi"); a table is being added.
+
 ## 2026-11-08: charging (raven's C1-C3 on oriole), and slot B's retries
 
 **Slot B ran out of retries.** The sixth `bin/omamobile push` rebooted into
