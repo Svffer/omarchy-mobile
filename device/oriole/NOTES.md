@@ -34,9 +34,11 @@ phone above:
 - **The session**: SDDM autologin into `uwsm start ... Hyprland`; Hyprland
   and quickshell (the Omarchy shell) run on simpledrm's `card0` with
   software rendering: the published kernel enables no GPU node for oriole,
-  so Vulkan finds no device, zink fails and Mesa falls back. The owner's
-  look at the panel is the pass criterion for "Display" here, not the
-  logs.
+  so Vulkan finds no device, zink fails and Mesa falls back. **The owner
+  sees the shell's lock screen on the panel** (2026-11-08, after the
+  Node.js install completed over the USB link): Display is `partial`
+  (software rendering, no brightness or refresh-rate control) and Storage
+  `works` in the matrix.
 - **Storage guard under Arch**: still exactly `boot_b`, `vendor_boot_b`,
   `dtbo_b` and `userdata` writable.
 - **pacman**: the `[omamobile]` channel is `local`; the phone refused the
