@@ -69,9 +69,15 @@ hand. [V]:
   confirmed. `panel_asleep` stays 0: gs-decon sends black frames
   (`screen_off=0`) rather than sleeping the panel.
 
-Still open: 90 Hz (oriole's own S6E3FC3 driver and the DSIM's link timers),
-the gs101 mode and pitch changes as proper patches, and the first boot with
-the whole stack loading by itself (device-oriole 0.2.7).
+- **The stack at boot** (fourteenth boot, device-oriole 0.2.7, kernel
+  `g99ff0ba918db`): gs-decon, gs-dsim-cmd (`allow_tx` Y), the panel driver,
+  the touch driver, panfrost with `clk_acpm`, the charger and the gauge all
+  load by themselves; simpledrm's card is gone, Hyprland starts on DSI-1 at
+  60 Hz (203 flips, no timeout, no crash report), `systemctl
+  is-system-running` says `running`. SSH at 52 s with the session up.
+
+Still open: 90 Hz (oriole's own S6E3FC3 driver and the DSIM's link timers)
+and the gs101 mode and pitch changes as proper patches.
 
 ## 2026-11-08: provisioned with tools/phone-provision -d oriole
 
