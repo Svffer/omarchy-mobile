@@ -121,6 +121,30 @@ connected in this boot; the headphones, switched on later, reach for the
 host they last used. Not a port fault; a small "reconnect trusted audio
 devices for a while after boot" helper would cover it.
 
+**Sleep power, first look (owner, 15:25-15:55, cable out):** one
+unbroken 29.4 min sleep with no dark wake cost about 6 % of a 3828 mAh
+battery (85 % of design): about 430 mA, against about 23 mA for AOSP's
+seven days. s2idle only idles the CPUs; MIF stays at 2028 MHz as the
+bootloader left it, and only SYS_SLEEP (not in Linux for gs101; not done on
+cheetah either) gets near AOSP. Two avoidable loads were on:
+
+- **The display:** with `screen_off` 0, DPMS off left DECON scanning black
+  frames at 60 Hz into an awake panel. `screen_off=2` at runtime: DPMS off
+  masks the trigger (0 frames in 2 s), DPMS on runs the oriole variant's
+  cold init and scans at 90 Hz again (no flip timeout). The first DPMS off
+  skipped the panel's sleep ("Skipping disable of already disabled
+  panel"): a panel taken over from the bootloader wasn't marked prepared;
+  fixed in the panel driver (`50a7df7b9`, the next push). device-oriole
+  0.2.13 sets `options gs_decon screen_off=2`.
+- **Wi-Fi:** the BCM4389 stayed powered with its link up. device-oriole
+  0.2.13 ships `/etc/omamobile/wifi-unload-for-sleep`, the hook's unload
+  mode. A logind sleep with the screen off: the panel asleep, brcmfmac and
+  `pcie_gs201` unloaded, `wlan-reg-on` disabled; on the lit screen Wi-Fi
+  came back but NetworkManager joined only after 44 s (it waits for its own
+  periodic scan on a device it takes as new). 0.2.14's hook asks for a
+  scan as soon as the device is available: **joined 13 s after the screen
+  lit.**
+
 ## 4. Next
 
 | Step | What | Pass |

@@ -60,6 +60,20 @@ wifi_on() {
   # The host first: brcmfmac binds when the endpoint enumerates.
   modprobe pcie_gs201 && modprobe brcmfmac
   log "Wi-Fi reloaded"
+  wifi_rescan
+}
+
+# NetworkManager takes the reloaded device as new and waits for its own
+# periodic scan before joining: 44 s on oriole (2026-11-08). Ask for a scan
+# as soon as the device is available: joined in about 12 s.
+wifi_rescan() {
+  local i
+  command -v nmcli >/dev/null || return 0
+  for ((i = 0; i < 50; i++)); do
+    nmcli -t -f DEVICE,STATE device 2>/dev/null | grep -qE '^wlp1s0:(disconnected|connecting|connected)' && break
+    sleep 0.2
+  done
+  nmcli device wifi rescan ifname wlp1s0 >/dev/null 2>&1 && log "Wi-Fi rescan requested"
 }
 
 wake_name=
