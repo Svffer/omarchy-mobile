@@ -3,8 +3,9 @@
 
 Status (2026-11-08): **B1 passes: Bluetooth comes up at boot** (kernel
 `g1b68efca2dd9`, device-oriole 0.2.11): the patch loads at 3 Mbaud, the
-controller is powered with the bootloader's address and scans; pairing and
-audio from the shell (B2) are next.
+controller is powered with the bootloader's address and scans. **B2
+passes**: the owner paired Sony WH-1000XM4 headphones from the shell and
+hears audio over A2DP with LDAC. Next: warm reboots (B3).
 
 ## 1. Approach
 
@@ -61,3 +62,10 @@ qualified on Oriole"; this is that qualification.
   in the same boot, brcmfmac's firmware loading in parallel with the patch.
 - 12 lines "Failed to read codec capabilities (-22)" at 11 s: the HCI core
   asking for offload codec data the chip doesn't give; harmless.
+
+**B2, same boot:** the owner paired and connected Sony WH-1000XM4
+headphones from the shell's quick settings; bluez lists them trusted and
+connected with A2DP sink and HFP; PipeWire made them the default sink
+(`bluez_output....1`, float32le, 2 ch, 48 kHz, codec `ldac`). The owner
+played audio and hears it: the first sound out of this phone (the built-in
+speakers have no driver on oriole yet).
