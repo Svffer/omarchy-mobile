@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# Present: omamobile-sleep unloads brcmfmac and the PCIe host before sleep
+# and reloads them on a wake (at once after the power key, else once the
+# panel is lit). The BCM4389 otherwise stays powered with its link up through
+# s2idle; on raven unloading saved about 115 mA asleep, at the cost of 7-10 s
+# to rejoin the network after a wake (device/oriole/SUSPEND-PLAN.md).
+# Delete this file to keep Wi-Fi loaded across sleep.

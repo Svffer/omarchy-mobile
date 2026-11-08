@@ -113,3 +113,10 @@ grep -q 'ExecStartPre=-/usr/bin/omamobile-wait-bluetooth' vendor/systemd/system/
   || fail "sddm waits for the adapter"
 bash -n bin/omamobile-bt-addr && bash -n bin/omamobile-wait-bluetooth || fail "the Bluetooth helpers parse"
 pass "Bluetooth: patch streaming, the bootloader's address, the session waits for the adapter"
+
+# Sleep power (SUSPEND-PLAN): the panel sleeps at DPMS off, Wi-Fi unloads
+grep -qx 'options gs_decon screen_off=2' vendor/modprobe.d/omamobile-oriole-display.conf \
+  || fail "DPMS off stops DECON and puts the panel to sleep"
+test -f "$t/root/etc/omamobile/wifi-unload-for-sleep" || fail "Wi-Fi is unloaded for sleep"
+grep -q 'unload_mode=/etc/omamobile/wifi-unload-for-sleep' bin/omamobile-sleep || fail "the hook reads the unload flag"
+pass "sleep power: the panel sleeps with the screen off, Wi-Fi unloads for sleep"

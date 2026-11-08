@@ -12,7 +12,7 @@ conflicts=(omamobile-device)
 install=omamobile-device-oriole.install
 makedepends=(gcc)
 checkdepends=(python)
-backup=(etc/UPower/UPower.conf.d/20-omamobile-critical-power.conf etc/pacman.d/omamobile-mirrorlist)
+backup=(etc/UPower/UPower.conf.d/20-omamobile-critical-power.conf etc/pacman.d/omamobile-mirrorlist etc/omamobile/wifi-unload-for-sleep)
 
 build() { "$startdir/build" "$srcdir/build"; }
 check() { "$startdir/test/all"; }
