@@ -18,9 +18,10 @@ blacklisted the drivers, `tools/wifi-w1-capture --watchdog` loaded them
 stage by stage. [V]: every stage clean on the first run; link Gen2 x1 up on
 try 1; `14e4:4441` enumerated; brcmfmac runs firmware 20.101.90 (c1) with
 the `Google.O6sub6` CLM, `wlp1s0` under NetworkManager, 8 networks in a
-scan. Details and numbers: WIFI-PLAN.md section 6. Next: the owner joins a
-network (W4's last bit), then the stack at boot (device-oriole 0.2.10, W5),
-then Bluetooth on raven's path.
+scan; the owner joined their 5 GHz network (channel 40, 81 %, 1170 Mbit/s),
+Wi-Fi became the default route and pings run at 9 ms. Details and numbers:
+WIFI-PLAN.md section 6. Next: the stack at boot (device-oriole 0.2.10
+installed, W5), then Bluetooth on raven's path.
 
 ## 2026-11-08: 90 Hz (D6) on modules swapped in by hand
 

@@ -4,8 +4,9 @@
 Status (2026-11-08): **W1-W4 pass by hand** (section 6): on kernel
 `g7330c3817bea` every stage ran clean under the watchdog, the link came up
 Gen2 x1 on the first try, brcmfmac runs firmware 20.101.90 with oriole's
-CLM and scans; joining a network and W5 (the stack at boot, device-oriole
-0.2.10) are next.
+CLM, and the owner's network joined at 5 GHz with Wi-Fi as the default
+route; W5 (the stack at boot, device-oriole 0.2.10 installed) is the next
+boot.
 Bluetooth: raven's path ([device/raven/BLUETOOTH-PLAN.md](../raven/BLUETOOTH-PLAN.md)),
 after Wi-Fi.
 
@@ -102,8 +103,13 @@ rails, so the SoC nodes are gs101's and the board block is oriole's.
   version 20.101.90 (c1 release2) FWID 01-3f632e0d**, CLM `Google.O6sub6`
   (2023-01-13), WLC 14.4; `wlp1s0` managed by NetworkManager (`usb0`
   unmanaged, the USB route stays), a scan listed 8 networks on 2.4 and
-  5 GHz. The MAC is random (`be:d7:...`), as on raven. No saved Wi-Fi
-  profile on this phone yet: the owner joins from the shell.
+  5 GHz. The MAC is random (`be:d7:...`), as on raven.
+- **W4, joined**: the owner joined their network from the shell: 5 GHz
+  (channel 40, 5200 MHz), signal 81 %, 1170 Mbit/s, WPA2, a DHCP address,
+  Wi-Fi the default route (metric 600) with the USB link behind it (2000);
+  4/4 pings to 1.1.1.1 at 8.9 ms, DNS and a public host at 32 ms. The
+  profile autoconnects. device-oriole 0.2.10 (the stack at boot) installed;
+  W5 is the next boot.
 - The three watchdog disarms each printed "busy" once and succeeded on the
   tool's retry. Logs: `logs/wifi-w1-20261108-1409*-s{1,2,3,4}.log`,
   `-1410*-s5.log` (5731 lines with brcmfmac's debug on; `debug` was reset
