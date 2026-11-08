@@ -1,9 +1,10 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 6 (oriole): Bluetooth
 
-Status (2026-11-08): **B0 done, offline**: the DTS enables the APM USI1
-UART and the BCM4389 node (kernel `g1b68efca2dd9`), device-oriole 0.2.11
-carries raven's helpers; the first boot with it is next.
+Status (2026-11-08): **B1 passes: Bluetooth comes up at boot** (kernel
+`g1b68efca2dd9`, device-oriole 0.2.11): the patch loads at 3 Mbaud, the
+controller is powered with the bootloader's address and scans; pairing and
+audio from the shell (B2) are next.
 
 ## 1. Approach
 
@@ -45,4 +46,18 @@ qualified on Oriole"; this is that qualification.
 
 ## 5. Results
 
-(none yet)
+**B1, 2026-11-08, eighteenth boot (`g1b68efca2dd9`, device-oriole 0.2.11):**
+
+- `175b0000.serial` is ttySAC1, serdev `serial0-0`, hci_uart_bcm binds at
+  4.0 s (vbat and vddio dummy regulators, as on raven).
+- `BCM: chip id 170`, `BCM4389C1`, the patch `BCM.google,gs101-oriole.hcd`
+  from 4.4 s, loaded by 11.0 s: `BCM4389C1 ES1PX_GG_06 FW:a13e154d3f
+  CFG:e0eb07b9ce [Baseline: 0395]`. No baud rate retry, no rebind
+  (`/run/omamobile/bt-rebinds` absent): the chip answered its first
+  command.
+- `omamobile-bt-addr@hci0` ran and exited 0: the controller's public
+  address equals `/chosen/config/bt_addr`; powered, named after the host.
+- A 10 s scan found 9 devices. Wi-Fi connected and the display at 90 Hz
+  in the same boot, brcmfmac's firmware loading in parallel with the patch.
+- 12 lines "Failed to read codec capabilities (-22)" at 11 s: the HCI core
+  asking for offload codec data the chip doesn't give; harmless.

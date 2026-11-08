@@ -9,6 +9,17 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
+## 2026-11-08: Bluetooth (B1): up at boot
+
+Kernel `g1b68efca2dd9` (eighteenth boot) enables the BCM4389 node on the APM
+USI1 UART, held back since fe12fd24f until the native CMU_APM clock path was
+qualified; device-oriole 0.2.11 carries raven's Bluetooth helpers. [V]:
+hci_uart_bcm at 4.0 s, the patch `ES1PX_GG_06` loaded by 11 s at 3 Mbaud on
+the first command (no retry, no rebind), the bootloader's address set, the
+adapter powered, 9 devices in a scan; Wi-Fi and 90 Hz unaffected.
+BLUETOOTH-PLAN.md section 5. Next: pairing and audio by the owner (B2),
+warm reboots (B3).
+
 ## 2026-11-08: Wi-Fi (W1-W5) on the BCM4389 over PCIe: works, up at boot
 
 Kernel `g7330c3817bea` (sixteenth boot): cheetah's PCIe controller and PHY
