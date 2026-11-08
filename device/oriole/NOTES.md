@@ -9,7 +9,7 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
-## 2026-11-08: suspend-to-idle (S1-S5)
+## 2026-11-08: suspend-to-idle (S1-S6, S8): on for the owner
 
 Kernel `g1b68efca2dd9` with s2idle selected at runtime (`deep`, the boot
 default, never wakes on gs101; `mem_sleep_default=s2idle` goes into the
@@ -19,7 +19,11 @@ RTC-woken cycles, all `rc=0`, Wi-Fi kept connected through brcmfmac's D3
 device-oriole 0.2.12 (raven's sleep policy and hook), `systemctl suspend`
 woken by the owner's press of Power (IRQ 109, `KEY_POWER`). The Bluetooth
 address rule matched connection nodes (`hci0:11`) and is now hosts only.
-SUSPEND-PLAN.md. Next: battery numbers, the shell's auto sleep.
+SUSPEND-PLAN.md. **Nineteenth boot: s2idle by default, RFCOMM (the
+headphones offer HFP now), and the shell's auto sleep on: it slept 30 s
+after the lock and woke on Power.** No auto sleep while Bluetooth audio is
+connected (omamobile-shell 0.2.102: the kernel drops every link in sleep).
+Next: battery numbers (S7).
 
 ## 2026-11-08: Bluetooth (B1, B2): up at boot, headphones play
 

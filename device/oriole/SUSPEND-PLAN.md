@@ -1,7 +1,8 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 6 (oriole): suspend
 
-Status (2026-11-08): **S1-S5 pass** on kernel `g1b68efca2dd9`: pm_test
+Status (2026-11-08): **S1-S6 and S8 pass; suspend is on for the owner**
+(the shell's auto sleep and Suspend in the menu). Earlier: **S1-S5 pass** on kernel `g1b68efca2dd9`: pm_test
 dry runs, RTC-woken s2idle (one 30 s, then ten 20 s cycles) and
 `systemctl suspend` woken by the power key; Wi-Fi kept its association
 through brcmfmac's D3 in the rtcwake runs, while through logind
@@ -101,10 +102,27 @@ omamobile-sleep on`) and Suspend unhidden in the menu (`suspend-off` off);
 `omamobile-sleepd check` answers "the lock isn't secure" with the phone
 unlocked, as it should.
 
+**S8, the shell's auto sleep (nineteenth boot):** the owner locked the
+phone and left it: `omamobile-sleepd` "sleeping (screen off and locked for
+30 s)" at 15:21:19, asleep until the owner's press of Power at 15:23:12
+("woken by IRQ 109 ... KEY_POWER", "a power-key wake: lighting the lock
+screen"). **Passes.**
+
+**Headset profile (same boot):** with RFCOMM, the WH-1000XM4's card offers
+`headset-head-unit` and `headset-head-unit-cvsd` (HFP) next to the A2DP
+profiles, and no "Protocol not supported" is logged. A call through it
+waits for the modem.
+
+**Reconnect at boot:** the headphones didn't connect by themselves; the
+owner connected them by hand. bluetoothd tried once when it started
+(15:20:31, "avdtp_connect_cb() connect to ...: Host is down (112)": the
+headphones weren't on yet) and bluez doesn't retry a device that was never
+connected in this boot; the headphones, switched on later, reach for the
+host they last used. Not a port fault; a small "reconnect trusted audio
+devices for a while after boot" helper would cover it.
+
 ## 4. Next
 
 | Step | What | Pass |
 | --- | --- | --- |
 | S7 | battery: awake vs asleep from the gauge's charge counter, cable out | a number to compare with raven's 293 mA |
-| S8 | the shell's auto sleep, on since S6: the owner locks the phone and leaves it (no SSH open) | sleeps 30 s after the screen goes dark, wakes on Power to the PIN pad |
-| B-HFP | headphones reconnect with RFCOMM in the kernel | bluez offers the Hands-Free profile, no "Protocol not supported" |
