@@ -1,10 +1,11 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 6 (oriole): Wi-Fi, then Bluetooth
 
-Status (2026-11-08): **W0 done, offline**: the gs101 variants of cheetah's
-PCIe controller and PHY drivers, the SoC nodes, oriole's Wi-Fi block in the
-device tree and the firmware on the phone; the drivers are blacklisted
-(device-oriole 0.2.9) until W2/W3 have run by hand under the watchdog.
+Status (2026-11-08): **W1-W4 pass by hand** (section 6): on kernel
+`g7330c3817bea` every stage ran clean under the watchdog, the link came up
+Gen2 x1 on the first try, brcmfmac runs firmware 20.101.90 with oriole's
+CLM and scans; joining a network and W5 (the stack at boot, device-oriole
+0.2.10) are next.
 Bluetooth: raven's path ([device/raven/BLUETOOTH-PLAN.md](../raven/BLUETOOTH-PLAN.md)),
 after Wi-Fi.
 
@@ -76,4 +77,34 @@ rails, so the SoC nodes are gs101's and the board block is oriole's.
 
 ## 6. Results
 
-(none yet)
+**2026-11-08, kernel `g7330c3817bea` (sixteenth boot), device-oriole 0.2.9:**
+
+- **Boot** with the blacklist: no PCIe or Wi-Fi module loaded by itself,
+  `14520000.pcie` and `14550000.phy` present, the 16 MiB restricted pool at
+  `0xff000000`, `vdd085_pcie1` 0.85 V and `vdd18_pcie1` 1.8 V on,
+  `wlan-reg-on` off, the display still at 90 Hz. `systemctl
+  is-system-running` `running`.
+- **W1** (`tools/wifi-w1-capture --watchdog 1`): CMU_HSI2 option
+  `0xf1000000` (automatic gating on), the seven controller clocks enabled,
+  UFS still reading.
+- **W2** (stage 2): PHY out of isolation (PMU `0x3ec4`), power-down writes,
+  first PMA/PCS reads, first ELBI writes and reads: `QCH_SEL 0x577`,
+  `SOFT_RESET 0xf`, `DEVICE_TYPE 0x4`. No hang.
+- **W2** (stage 3): the gs101 PMA tables (common, 1 lane), resets released,
+  external XO, **PLL lock 1, CDR lock 1, OC done 1** (`PMA 0x3f0 0xf`,
+  `0xfc0 0xf8`, `PCS 0x188 0x2`), the I/A sequencer programmed.
+- **W2** (stage 4): DBI readable, `ID 0xa5a5144d`, DWC version
+  `0x3531302a`, D-state 0, LTSSM 0.
+- **W3** (stage 5): WL_REG_ON through pwrctrl, PERST released, **link up on
+  try 1, Gen2 x1**; `lspci`: `01:00.0 Network controller: Broadcom
+  [14e4:4441] (rev 03)`.
+- **W4** (`--brcmfmac 5`): PCIe protocol version 7, **Firmware BCM4389/3
+  version 20.101.90 (c1 release2) FWID 01-3f632e0d**, CLM `Google.O6sub6`
+  (2023-01-13), WLC 14.4; `wlp1s0` managed by NetworkManager (`usb0`
+  unmanaged, the USB route stays), a scan listed 8 networks on 2.4 and
+  5 GHz. The MAC is random (`be:d7:...`), as on raven. No saved Wi-Fi
+  profile on this phone yet: the owner joins from the shell.
+- The three watchdog disarms each printed "busy" once and succeeded on the
+  tool's retry. Logs: `logs/wifi-w1-20261108-1409*-s{1,2,3,4}.log`,
+  `-1410*-s5.log` (5731 lines with brcmfmac's debug on; `debug` was reset
+  to 0 afterwards).
