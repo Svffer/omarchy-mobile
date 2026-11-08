@@ -9,6 +9,35 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
+## 2026-11-08: thermal zones, the fuel gauge, the GPU from boot (fifth boot)
+
+Kernel `7.3.0-rc6-omamobile-push1-g1d3bd6bf05b1` (local branch: the gpu
+enable plus `&acpm_tmu { status = "okay" }` and raven's 115 degC critical
+trips for the big, mid, little and gpu zones), device-oriole 0.2.3 (neither
+`clk_acpm` nor `max17042_battery` blacklisted any more), pushed with
+`bin/omamobile push`. [V]:
+
+- **Thermal**: seven zones: `big-thermal`, `mid-thermal`, `little-thermal`
+  (51 degC at 40 s), `gpu-thermal` (49), `isp-thermal` (48), `tpu-thermal`
+  (49) and `max170xx_battery` (31.2), four cooling devices. The CPU trips are
+  the shared ones (`kernel/configs`, raven's thermal work); no GPU cooling
+  yet (raven's kernel #189 is not in this branch).
+- **GPU from boot**: `clk_acpm` and `panfrost` load at boot, Hyprland holds
+  `renderD128` from its first frame; the owner sees the lock screen right
+  after the push.
+- **Battery**: `max170xx_battery` 98 %, `Discharging` on the laptop's USB
+  port: no charger driver yet (the chip runs on the bootloader's settings,
+  as raven's USB-PLAN section 4 describes), so the phone draws more than the
+  port gives while the screen is on. The battery node for the charger
+  (4520 mAh, 4.45 V, 1.33 A at 0.3 C from the stock `google,battery`
+  limits) is a further local kernel commit, not built yet; the charger
+  stays blacklisted until it and raven's `omamobile-charger.conf` options
+  (`default_ilim_ua=500000 temp_guard=1`) go in together.
+- `tools/phone-smoke` on the previous boot (GPU by hand): every required
+  check ok, GPU "render node on panfrost", battery, thermal; `touch` not ok
+  (no driver) and the panfrost clock errors from before the manual
+  `clk_acpm`. Report kept privately.
+
 ## 2026-11-08: the Mali-G78 under panfrost (GPU), and Plymouth
 
 Fourth boot of slot B, pushed from the Arch root with `bin/omamobile push`
