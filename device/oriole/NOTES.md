@@ -19,7 +19,9 @@ the first command (no retry, no rebind), the bootloader's address set, the
 adapter powered, 9 devices in a scan; Wi-Fi and 90 Hz unaffected.
 **B2: the owner paired WH-1000XM4 headphones from the shell and hears audio
 (A2DP, LDAC, 48 kHz)**, the phone's first sound. BLUETOOTH-PLAN.md
-section 5. Next: warm reboots (B3).
+section 5. **B3, first round: five warm reboots, all clean** (patch on the
+first command, address set, Wi-Fi joined, 90 Hz); raven's silent chip not
+seen yet.
 
 ## 2026-11-08: Wi-Fi (W1-W5) on the BCM4389 over PCIe: works, up at boot
 

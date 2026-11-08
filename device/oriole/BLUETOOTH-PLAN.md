@@ -5,7 +5,9 @@ Status (2026-11-08): **B1 passes: Bluetooth comes up at boot** (kernel
 `g1b68efca2dd9`, device-oriole 0.2.11): the patch loads at 3 Mbaud, the
 controller is powered with the bootloader's address and scans. **B2
 passes**: the owner paired Sony WH-1000XM4 headphones from the shell and
-hears audio over A2DP with LDAC. Next: warm reboots (B3).
+hears audio over A2DP with LDAC. **B3, first round**: five warm reboots in
+a row, the chip came up on the first command each time (no baud retry, no
+rebind), with Wi-Fi and 90 Hz; raven's silent-chip case not seen yet.
 
 ## 1. Approach
 
@@ -69,3 +71,20 @@ connected with A2DP sink and HFP; PipeWire made them the default sink
 (`bluez_output....1`, float32le, 2 ch, 48 kHz, codec `ldac`). The owner
 played audio and hears it: the first sound out of this phone (the built-in
 speakers have no driver on oriole yet).
+
+**B3, first round, same day (`g1b68efca2dd9`):** five warm reboots in a row,
+each through fastboot (`reboot-to bootloader`, `--set-active=b`, `fastboot
+reboot`), a snapshot at about 11.5 s of uptime, then the journal of every
+boot read afterwards:
+
+| Boot | Patch loaded | Baud retry | Setup failures | Rebinds | Address set | Wi-Fi joined | 90 Hz |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1-5 | yes | 0 | 0 | 0 | yes | yes | yes |
+
+The snapshot of boot 3 read `Powered: no` at 11.6 s with the patch loaded
+and no failure: the moment `omamobile-bt-addr` powers the adapter off to set
+the address; its unit finished successfully. The other snapshots read
+before Wi-Fi and the session (60 Hz) were up; the journals show both on
+every boot. Raven saw the silent chip once in 7 and once in 16 warm
+reboots, so five clean boots do not rule it out; a longer run or a day of
+normal use is the next check.
