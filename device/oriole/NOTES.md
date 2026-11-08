@@ -9,6 +9,57 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
+## 2026-11-08: the display under gs-decon (D1-D4): 60 Hz, brightness
+
+Kernel branch `oriole-touch` with raven's kernel #116 merged (gs101 DECON0
+and DSIM0, gs-decon's gs101 data) and the DT block of DISPLAY-PLAN section
+2: the Pixel 7's S6E3FC3 P10 panel driver on `dsi0`, reset gpp24-1, rails
+LDO22 (vci), LDO31 (vddi) and bucka always on, a 0x3400000 scanout pool.
+Boots eleven to thirteen, each after `fastboot --set-active=b`, the display
+modules blacklisted by a temporary `/etc/modprobe.d` file and loaded by
+hand. [V]:
+
+- **D1 passed**: `gs_decon stage=0`: DECON running in command mode,
+  `BLD_BG_SIZE`/`RDMA_IMG_SIZE` 0x09600438 (1080x2400), `RDMA_BASEADDR`
+  0xfac00000 (the boot framebuffer), `TRIG_CON` 0x3061, the frame counter
+  moving. gs-dsim-cmd: "unknown link timers (UNDERRUN_CTRL 0x00001da7): no
+  rate switching", so 60 Hz only for now.
+- **gs-decon's mode table is per SoC**: gs101's is raven's 1440x3120, and
+  stage 0 first stopped on "unexpected scanout size 1080x2400". A NOT FOR
+  MERGE commit adds oriole's 60 Hz mode (the P10 driver's timings) picked by
+  the board compatible; the board's modes belong to the panel driver.
+- **D2 passed**: `stage=1`, `stats` after 6 s: 361 frame starts and
+  frame dones, 59.7 Hz, `gs-decon-fs`/`-fd` on GIC 370/369, MIF at 2028 MHz,
+  DISP at 400 MHz.
+- **D3, first try, crash-looped on a black screen**: the panel driver
+  "taken over from the bootloader", gs-decon "flip-only KMS on DECON0,
+  1080x2400, up to 60 Hz", simpledrm's card gone (`card2`, DSI-1), but every
+  atomic commit failed with EINVAL and Hyprland aborted in
+  `CMonitorResources`. With `drm.debug=0x4`: "fb 1080x2400 pitch 4352 does
+  not match 1080x2400 pitch 4320", 72 times. panfrost's linear buffers are
+  64-byte aligned, and 1080 * 4 = 4320 is not (raven's 1440 * 4 = 5760 is),
+  while gs-decon on gs101 insisted on the bootloader's pitch. A second NOT
+  FOR MERGE commit accepts padded rows on oriole as on the Pixel 9a and
+  writes the source width back together with the height, which shares
+  RDMA_SRC_SIZE on this DPP0.
+- **D3 passed** (`g99ff0ba918db`): after `systemctl restart sddm`, Hyprland
+  on `card2` (DSI-1 1080x2400@60, scale 3) rendering through `renderD128`
+  (panfrost); 183 flips in the first seconds, no timeout, no late flip;
+  **the owner sees the lock screen**. The old session's crash reports (it
+  lost simpledrm under itself) are the expected casualty of a handover by
+  hand; at boot there is no such instance.
+- **D4 passed by root**: backlight `1c2c0000.dsi.0`, 0..2047, 1023 at
+  takeover; `brightnessctl set 30%` and back changed the panel, no DSIM
+  error. The shell's slider did not act on the owner's first try: the device
+  appeared after the session had enumerated its backlights, and a user
+  outside the logind session gets "Operation not permitted" on sysfs (there
+  is no brightnessctl udev rule; the session goes through logind). Checked
+  again after a session restart, and at the next boot with device-oriole
+  0.2.6, which loads the stack at boot capped at `max_refresh=60`.
+
+Still open: 90 Hz (oriole's own S6E3FC3 driver and the DSIM's link timers),
+DPMS off/on (D5), the gs101 mode and pitch changes as proper patches.
+
 ## 2026-11-08: provisioned with tools/phone-provision -d oriole
 
 The first real run of the oriole path (the raven block with the device's

@@ -1,10 +1,11 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 6 (oriole): display driver
 
-Status (2026-11-08): D0 under way. Simpledrm shows the console and the
-shell after the initramfs's DECON trigger write (NOTES.md); brightness,
-display off and 90 Hz need gs-decon on gs101 (raven's kernel #116, merged
-into the local branch) and a panel driver.
+Status (2026-11-08): **D1-D4 pass** (NOTES.md): gs-decon drives DSI-1 at
+60 Hz with the GPU rendering to scanout, brightness through the Pixel 7's
+S6E3FC3 driver. Two NOT FOR MERGE gs-decon changes were needed (oriole's mode
+in the gs101 table; padded rows, since 1080 * 4 is not 64-byte aligned).
+Next: D5 (DPMS) and D6 (90 Hz with oriole's own panel driver).
 
 ## 1. Approach
 
