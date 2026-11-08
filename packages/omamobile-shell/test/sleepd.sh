@@ -92,8 +92,10 @@ grep -c 'not sleeping: a sleep inhibitor is held (Omarchy Mobile GNSS)' "$t/out"
 refused "a block shutdown:sleep inhibitor" 'echo "[\"shutdown:sleep\",\"x\",\"y\",\"block\",0,77]" >"$t/inhibitors"'
 refused "a RUNNING sink" 'printf "50\talsa_output.aoc\tPipeWire\ts16le 2ch 48000Hz\tRUNNING\n" >"$t/sinks"'
 grep -c 'not sleeping: audio is playing (alsa_output.aoc)' "$t/out" >/dev/null || fail "the playing sink is named"
+refused "connected Bluetooth headphones, paused" 'printf "51\tbluez_output.00_11_22_33_44_55.1\tPipeWire\tfloat32le 2ch 48000Hz\tSUSPENDED\n" >"$t/sinks"'
+grep -c 'not sleeping: Bluetooth audio is connected (bluez_output.00_11_22_33_44_55.1)' "$t/out" >/dev/null || fail "the Bluetooth sink is named"
 refused "Stay awake" 'mkdir -p "$t/home/.local/state/omarchy/indicators"; touch "$t/home/.local/state/omarchy/indicators/stay-awake"'
-echo "ok - sleepd: never with the toggle off, the screen on, an insecure lock, SSH, an inhibitor, media or Stay awake"
+echo "ok - sleepd: never with the toggle off, the screen on, an insecure lock, SSH, an inhibitor, media, Bluetooth audio or Stay awake"
 
 # Delay-mode inhibitors (NetworkManager, the lock) and idle sinks don't count.
 reset

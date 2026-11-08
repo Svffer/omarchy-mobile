@@ -25,7 +25,12 @@
 #   - an SSH session is open (the USB link drops while the phone sleeps);
 #   - something holds a logind sleep inhibitor in block mode (a call, GNSS,
 #     systemd-inhibit --what=sleep);
-#   - a PipeWire sink is RUNNING (media playing).
+#   - a PipeWire sink is RUNNING (media playing);
+#   - Bluetooth audio is connected (a bluez_output sink exists, paused or
+#     not): the kernel drops every Bluetooth link before sleep, so headphones
+#     left connected would be cut off on every dark sleep (device/oriole
+#     SUSPEND-PLAN, 2026-11-08). The cost is a phone that stays awake while
+#     headphones are connected.
 set -u
 
 int() { [[ $1 =~ ^[0-9]+$ ]] && echo "$1" || echo "$2"; }
@@ -92,6 +97,11 @@ playing() {
   pactl list short sinks 2>/dev/null | awk -F'\t' '$NF == "RUNNING" { print $2; exit }'
 }
 
+# A Bluetooth audio sink, whatever its state: headphones are connected.
+bt_audio() {
+  pactl list short sinks 2>/dev/null | awk -F'\t' '$2 ~ /^bluez_output\./ { print $2; exit }'
+}
+
 # Why sleep isn't allowed now; prints nothing and fails when it is.
 refusal() {
   local who
@@ -104,6 +114,8 @@ refusal() {
   [[ -n $who ]] && { echo "a sleep inhibitor is held ($who)"; return 0; }
   who=$(playing)
   [[ -n $who ]] && { echo "audio is playing ($who)"; return 0; }
+  who=$(bt_audio)
+  [[ -n $who ]] && { echo "Bluetooth audio is connected ($who)"; return 0; }
   return 1
 }
 
