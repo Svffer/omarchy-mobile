@@ -17,6 +17,11 @@ for file in usr/bin/reboot-to usr/bin/omamobile-setup-system \
   etc/UPower/UPower.conf.d/20-omamobile-critical-power.conf \
   usr/lib/modprobe.d/omamobile-oriole-bringup.conf \
   usr/lib/modprobe.d/omamobile-wifi.conf \
+  usr/lib/modprobe.d/omamobile-bluetooth.conf \
+  usr/bin/omamobile-bt-addr usr/bin/omamobile-wait-bluetooth \
+  usr/lib/udev/rules.d/80-omamobile-bt-addr.rules \
+  usr/lib/systemd/system/omamobile-bt-addr@.service \
+  usr/lib/systemd/system/sddm.service.d/omamobile-oriole-bluetooth.conf \
   etc/pacman.d/omamobile-mirrorlist \
   usr/share/licenses/omamobile-device-oriole/LICENSE; do
   test -f "$t/root/$file"
@@ -51,8 +56,11 @@ for module in ('gpio_max77759', 'arm_dsu_pmu', 'at24'):
 sleep = (root/'usr/lib/systemd/sleep.conf.d/20-omamobile-unqualified-sleep.conf').read_text().splitlines()
 for mode in ('Suspend', 'Hibernation', 'SuspendThenHibernate', 'HybridSleep'):
     assert f'Allow{mode}=no' in sleep
-assert not list(root.rglob('*.service'))
-print('ok - coldplug refusals, disabled sleep modes and no service units')
+# The only unit: the Bluetooth address, started by udev when hci0 appears
+# (no unit is enabled at install; omamobile-setup-system is the gate)
+assert sorted(p.name for p in root.rglob('*.service')) == ['omamobile-bt-addr@.service']
+assert not list(root.rglob('*.wants'))
+print('ok - coldplug refusals, disabled sleep modes and no enabled service units')
 PY_POLICY
 
 # Copied policy and helper must track the source package when present.
@@ -89,3 +97,14 @@ for m in pcie_gs201 phy_gs201_pcie brcmfmac; do
 done
 grep -qx 'blacklist pcie_gs201_sysmmu' vendor/modprobe.d/omamobile-wifi.conf || fail "the PCIe SysMMU helper stays out"
 pass "the Wi-Fi PCIe stack loads at boot without the SysMMU helper"
+
+# Bluetooth (BLUETOOTH-PLAN): the patch streams without waiting on Write RAM,
+# the bootloader's address is set when the controller appears, and the session
+# waits for the adapter (raven's helpers)
+grep -qx 'options btbcm patchram_nowait=1' vendor/modprobe.d/omamobile-bluetooth.conf \
+  || fail "btbcm streams the patch"
+grep -q 'DRIVERS=="hci_uart_bcm"' vendor/udev/rules.d/80-omamobile-bt-addr.rules || fail "the address rule matches hci_uart_bcm"
+grep -q 'ExecStartPre=-/usr/bin/omamobile-wait-bluetooth' vendor/systemd/system/sddm.service.d/omamobile-oriole-bluetooth.conf \
+  || fail "sddm waits for the adapter"
+bash -n bin/omamobile-bt-addr && bash -n bin/omamobile-wait-bluetooth || fail "the Bluetooth helpers parse"
+pass "Bluetooth: patch streaming, the bootloader's address, the session waits for the adapter"

@@ -9,7 +9,7 @@ build=${2:-build}
 for tool in reboot-to; do
   install -Dm755 "$build/$tool" "$destination/usr/bin/$tool"
 done
-for tool in omamobile-setup-system omamobile-charge-guard; do
+for tool in omamobile-setup-system omamobile-charge-guard omamobile-bt-addr omamobile-wait-bluetooth; do
   install -Dm755 "bin/$tool" "$destination/usr/bin/$tool"
 done
 while IFS= read -r -d '' file; do
