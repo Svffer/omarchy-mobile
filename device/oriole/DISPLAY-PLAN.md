@@ -6,10 +6,10 @@ Status (2026-11-08): **D1-D6 pass** (NOTES.md): gs-decon drives DSI-1 at
 the S6E3FC3 driver (gs-dsim-cmd needs `allow_tx=1`), display off and wake by
 the lock screen (the rate drops to 60 Hz while the screen is off). Two NOT
 FOR MERGE gs-decon changes were needed (oriole's modes in the gs101 table;
-padded rows, since 1080 * 4 is not 64-byte aligned). D6 ran on modules
-swapped in by hand with the P10 compatible still in the device tree; the
-build with `samsung,s6e3fc3` in the DT (device-oriole 0.2.8) is the next
-boot.
+padded rows, since 1080 * 4 is not 64-byte aligned). D6 ran first on
+modules swapped in by hand, then from boot with `samsung,s6e3fc3` in the
+device tree and device-oriole 0.2.8 (the fifteenth boot, NOTES.md): the
+session starts at 90 Hz by itself.
 
 ## 1. Approach
 

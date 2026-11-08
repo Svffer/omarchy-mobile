@@ -51,9 +51,15 @@ and size, which the handover never sends. [V]:
   `devmem`); `hyprctl dispatch dpms on` (the Lua `hyprctl` wants a
   dispatcher object). `/dev/mem` works through python's `mmap`, not `dd`.
 
-Next boot: the same tree with `samsung,s6e3fc3` in the DT and device-oriole
-0.2.8 (no `max_refresh=60`), to see the oriole variant take over at boot and
-the session start at 90 Hz by itself.
+- **Fifteenth boot, 90 Hz at boot** (kernel `g670e20e5629a`, the DT's
+  `samsung,s6e3fc3`, device-oriole 0.2.8): "link timers for 60 Hz" at 3.8 s,
+  "Pixel 6 panel taken over from the bootloader" at 3.9 s, "up to 90 Hz (at
+  60 Hz)", then "90 Hz" at 9.6 s as the session came up; `systemctl
+  is-system-running` `running`, SSH at 36 s. `hyprctl monitors`
+  `1080x2400@90.00000`, scale 3. 10.013 s window: 902 frame starts
+  (90.07 Hz), `flip_timeouts 0`, `flips_late 0`, DSIM `0x0e9d`/`0x1ccd20d0`,
+  underrun bit clear. The owner watched the panel at 90 Hz on the
+  hand-swapped modules before this boot and saw it work. [V]
 
 ## 2026-11-08: the display under gs-decon (D1-D4): 60 Hz, brightness
 
