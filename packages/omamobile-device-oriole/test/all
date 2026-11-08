@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: MIT
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+fail() { printf 'not ok - %s\n' "$1" >&2; exit 1; }
+pass() { printf 'ok - %s\n' "$1"; }
 t=$(mktemp -d)
 trap 'rm -rf "$t"' EXIT
 ./build "$t/build"
@@ -42,7 +44,7 @@ from pathlib import Path
 import sys
 root = Path(sys.argv[1])
 policy = (root/'usr/lib/modprobe.d/omamobile-oriole-bringup.conf').read_text().splitlines()
-for module in ('max77759_charger', 'gpio_max77759', 'arm_dsu_pmu', 'at24'):
+for module in ('gpio_max77759', 'arm_dsu_pmu', 'at24'):
     assert f'blacklist {module}' in policy
     assert f'install {module} /bin/false' in policy
 sleep = (root/'usr/lib/systemd/sleep.conf.d/20-omamobile-unqualified-sleep.conf').read_text().splitlines()
@@ -59,3 +61,13 @@ for file in src/reboot-to.c vendor/udev/rules.d/10-omamobile-storage.rules vendo
   fi
 done
 test ! -e "$t/root/usr/bin/omamobile-bootctl"
+
+# The charger loads only with both options (raven's test): the input limit
+# keeps charging on without a Type-C source, the guard follows the gauge
+! grep -rqx 'blacklist max77759_charger' vendor/modprobe.d || fail "the charger is no longer blacklisted"
+grep -qx 'options max77759_charger default_ilim_ua=500000 temp_guard=1' vendor/modprobe.d/omamobile-charger.conf \
+  || fail "the charger loads with its input limit and the temperature guard"
+grep -qx 'softdep max77759_charger pre: max17042_battery' vendor/modprobe.d/omamobile-charger.conf \
+  || fail "the gauge loads before the charger"
+test -x bin/omamobile-charge-guard || fail "omamobile-charge-guard is installed"
+pass "the charger loads with its guard"

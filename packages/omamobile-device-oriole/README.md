@@ -20,7 +20,9 @@ The [coldplug audit](../../device/oriole/NOTES.md) found matching unbound device
 modprobe dry runs refused these modules; it did not load them or establish
 their behavior. `clk_acpm` left the list on 2026-11-08: it is the GPU's clock
 provider over ACPM, and panfrost deferred forever without it; `max17042_battery` left it the same day,
-the gauge reporting the battery as on raven. This package does not qualify the underlying hardware.
+the gauge reporting the battery as on raven; `max77759_charger` followed with
+raven's `omamobile-charger.conf` options and `omamobile-charge-guard`, once the
+battery node was in the device tree. This package does not qualify the underlying hardware.
 Built-in drivers are outside modprobe policy.
 
 No battery startup, staged boot checker, automatic boot-success, radio,
