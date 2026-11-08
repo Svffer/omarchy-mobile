@@ -1,11 +1,13 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 6 (oriole): display driver
 
-Status (2026-11-08): **D1-D4 pass** (NOTES.md): gs-decon drives DSI-1 at
-60 Hz with the GPU rendering to scanout, brightness through the Pixel 7's
-S6E3FC3 driver. Two NOT FOR MERGE gs-decon changes were needed (oriole's mode
-in the gs101 table; padded rows, since 1080 * 4 is not 64-byte aligned).
-Next: D5 (DPMS) and D6 (90 Hz with oriole's own panel driver).
+Status (2026-11-08): **D1-D5 pass** (NOTES.md): gs-decon drives DSI-1 at
+60 Hz with the GPU rendering to scanout, brightness from the shell through
+the Pixel 7's S6E3FC3 driver (gs-dsim-cmd needs `allow_tx=1`), display off
+and wake by the lock screen. Two NOT FOR MERGE gs-decon changes were needed
+(oriole's mode in the gs101 table; padded rows, since 1080 * 4 is not
+64-byte aligned). Next: the stack at boot (device-oriole 0.2.7), then D6
+(90 Hz with oriole's own panel driver).
 
 ## 1. Approach
 

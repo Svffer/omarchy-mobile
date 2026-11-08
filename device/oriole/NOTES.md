@@ -48,17 +48,30 @@ hand. [V]:
   **the owner sees the lock screen**. The old session's crash reports (it
   lost simpledrm under itself) are the expected casualty of a handover by
   hand; at boot there is no such instance.
-- **D4 passed by root**: backlight `1c2c0000.dsi.0`, 0..2047, 1023 at
-  takeover; `brightnessctl set 30%` and back changed the panel, no DSIM
-  error. The shell's slider did not act on the owner's first try: the device
-  appeared after the session had enumerated its backlights, and a user
-  outside the logind session gets "Operation not permitted" on sysfs (there
-  is no brightnessctl udev rule; the session goes through logind). Checked
-  again after a session restart, and at the next boot with device-oriole
-  0.2.6, which loads the stack at boot capped at `max_refresh=60`.
+- **D4, first by root, blind**: backlight `1c2c0000.dsi.0`, 0..2047, 1023
+  at takeover; `brightnessctl set 30%` and back changed sysfs with no DSIM
+  error, but nothing reached the panel (see the next point), and the
+  shell's slider did nothing for the owner. Side findings: a user outside
+  the logind session gets "Operation not permitted" on sysfs (there is no
+  brightnessctl udev rule; the session goes through logind), and from the
+  shell's context `brightnessctl set` reports "Protocol error" after logind
+  has applied the value.
+- **The cause, and D4 by the shell**: gs-dsim-cmd's `allow_tx` is off by
+  default and read-only at runtime ("Send DSI packets to the panel (default:
+  off, read-only)"), so no DCS left the DSIM. Raven's `options gs_dsim_cmd
+  allow_tx=1` (device-oriole 0.2.7, with raven's udev rule giving the video
+  group `bl_power` and the FTS input's `inhibited`) and a reload of the three
+  modules: **the owner moves the quick-settings slider and the panel
+  follows.**
+- **D5 passed**: with DCS flowing, the lock screen's display-off a few
+  seconds after the shell's 60 s idle lock darkens the panel (until then it
+  never had), and Power or a touch wakes it to the lock screen, as the owner
+  confirmed. `panel_asleep` stays 0: gs-decon sends black frames
+  (`screen_off=0`) rather than sleeping the panel.
 
 Still open: 90 Hz (oriole's own S6E3FC3 driver and the DSIM's link timers),
-DPMS off/on (D5), the gs101 mode and pitch changes as proper patches.
+the gs101 mode and pitch changes as proper patches, and the first boot with
+the whole stack loading by itself (device-oriole 0.2.7).
 
 ## 2026-11-08: provisioned with tools/phone-provision -d oriole
 
