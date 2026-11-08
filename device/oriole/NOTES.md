@@ -9,6 +9,52 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
+## 2026-11-08: 90 Hz (D6) on modules swapped in by hand
+
+Kernel branch `oriole-touch`, on the fourteenth boot's kernel
+(`g99ff0ba918db`), with three modules rebuilt against its release
+(`make M=... MO=...`, so the vermagic matched) and swapped in over SSH:
+`systemctl stop sddm`, `rmmod gs_decon panel_samsung_s6e3fc3 gs_dsim_cmd`,
+`insmod` of the new panel driver, `gs-dsim-cmd allow_tx=1` and `gs-decon`,
+`systemctl start sddm`. The device tree still named `samsung,s6e3fc3-p10`,
+so the P10 variant ran; the oriole variant differs only in its cold init
+and size, which the handover never sends. [V]:
+
+- **The pieces**: `panel-samsung-s6e3fc3.c` gets `set_refresh_rate` (Google's
+  `change_frequency`: `F0 5A 5A; 60 00|08; F7 0F; F0 A5 A5`, both variants),
+  the `samsung,s6e3fc3` variant with Google's oriole init (and the binding),
+  a mutex around its sequences, and a fix: the rails held since the handover
+  were never released, so every `rmmod` warned in `regulator_bulk_free`
+  (seen twice here, on the old module). gs-dsim-cmd gets oriole's timer set
+  (60: `0x1da7`/`0x2b343138` as ABL leaves them, recognised at probe: "link
+  timers for 60 Hz"; 90: `0x0e9d`/`0x1ccd20d0`, DISPLAY-PLAN section 2).
+  gs-decon's oriole table gets the 90 Hz mode, and gs-decon now offers the
+  highest rate of its table the DSIM can switch to instead of testing 120
+  alone ("flip-only KMS on DECON0, 1080x2400, up to 90 Hz (at 60 Hz)").
+- **First try stayed at 60**: Hyprland took 90 Hz as the preferred mode and
+  every commit logged "switching from 60 to 90 Hz failed: -22": the P10
+  variant listed 60 Hz only, and the switch refuses a rate outside the
+  variant's modes. Google's P10 driver does 60/90 with the same command,
+  so both variants list both modes now.
+- **D6 passed**: after the session restart "gs-decon: 90 Hz"; `hyprctl
+  monitors` shows `1080x2400@90.00000`, modes `@90.00Hz @60.00Hz`, scale 3.
+  A 10.015 s window of `stats` at the lock screen: 903 frame starts
+  (90.15 Hz), `flip_timeouts 0`, `flips_late 0`, flip latency 5.6 ms
+  average; DSIM `UNDERRUN_CTRL 0x0e9d`, `CMD_TE_CTRL1 0x1ccd20d0`, `INTSRC`
+  bit 19 (underrun) clear after minutes at 90 Hz. The owner has not yet
+  looked at the panel; no artefacts were reported from the measurement.
+- **Screen off drops to 60 Hz and comes back**: the lock screen's DPMS off
+  about 13 s after a session start disables the CRTC ("60 Hz", `bl_power`
+  4, the DRM state `active=0`), and the next wake or session start goes
+  back to 90. Measure within those 13 s, or wake the screen first.
+- **Not to use here**: `tools/display-hz` (gs201's DECON address, needs
+  `devmem`); `hyprctl dispatch dpms on` (the Lua `hyprctl` wants a
+  dispatcher object). `/dev/mem` works through python's `mmap`, not `dd`.
+
+Next boot: the same tree with `samsung,s6e3fc3` in the DT and device-oriole
+0.2.8 (no `max_refresh=60`), to see the oriole variant take over at boot and
+the session start at 90 Hz by itself.
+
 ## 2026-11-08: the display under gs-decon (D1-D4): 60 Hz, brightness
 
 Kernel branch `oriole-touch` with raven's kernel #116 merged (gs101 DECON0
