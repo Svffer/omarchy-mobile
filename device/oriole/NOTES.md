@@ -9,6 +9,20 @@ Sources:
 - `U/`: upstream Linux v7.0, `arch/arm64/boot/dts/exynos/google/gs101*.dts(i)`.
 - `P/`: postmarketOS pmaports [`device/testing/device-google-oriole`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/device-google-oriole), [`soc-google-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/soc-google-gs101) and [`linux-postmarketos-gs101`](https://gitlab.postmarketos.org/postmarketOS/pmaports/-/tree/main/device/testing/linux-postmarketos-gs101) (7.0.6), which builds [gs101-mainline/linux @ d28cfa42](https://github.com/gs101-mainline/linux/tree/d28cfa4275b95e93f4b7a1e743de31b723bd21b8).
 
+## 2026-11-08: provisioned with tools/phone-provision -d oriole
+
+The first real run of the oriole path (the raven block with the device's
+own names), from the factory image, the stage-0 getprop capture (for
+`ro.boot.cdt_hwid`, `ro.hardware`, `ro.boot.hardware.platform`) and the
+Linux NV backup: 12 firmware files into `/usr/lib/firmware/updates` (Wi-Fi,
+Bluetooth, the AoC, the amplifiers, the haptics, the touch controller), the
+AoC sensor registry (7 files), the gnss chroot (265 files), the modem chroot
+(896), `props.conf` and `modem-nv.sha256`, every tree verified by checksum
+on the phone. No unit enabled: oriole's image carries neither
+`omamobile-sensors` nor `omamobile-gnss` yet (`ROOTFS_PACKAGES` is empty),
+and the kernel has no AoC, Wi-Fi, Bluetooth or GNSS for oriole until
+raven's gs101 branches are published. The files wait for them.
+
 ## 2026-11-08: touch (ST FTS "FTM5"): T1-T3 pass with the imported driver
 
 Kernel branch `oriole-touch` (on `oriole-local`): ST's GPL FTS driver as
