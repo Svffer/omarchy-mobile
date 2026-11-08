@@ -23,7 +23,10 @@ SUSPEND-PLAN.md. **Nineteenth boot: s2idle by default, RFCOMM (the
 headphones offer HFP now), and the shell's auto sleep on: it slept 30 s
 after the lock and woke on Power.** No auto sleep while Bluetooth audio is
 connected (omamobile-shell 0.2.102: the kernel drops every link in sleep).
-Next: battery numbers (S7).
+**Battery (twentieth boot): asleep draws 275 mA with the panel sleeping
+(gs_decon screen_off=2, the handover fix) and Wi-Fi unloaded, down from
+about 430 mA: about 13.9 h on this battery, against AOSP's seven days,
+which need the SoC's deep sleep (SYS_SLEEP).**
 
 ## 2026-11-08: Bluetooth (B1, B2): up at boot, headphones play
 

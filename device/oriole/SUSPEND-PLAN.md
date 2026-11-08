@@ -145,8 +145,26 @@ cheetah either) gets near AOSP. Two avoidable loads were on:
   scan as soon as the device is available: **joined 13 s after the screen
   lit.**
 
+**Sleep power, second look (twentieth boot, `g50a7df7b911e` with the panel
+handover fix, device-oriole 0.2.14, cable out):** the first DPMS off now
+really sleeps the panel (no "Skipping" lines). A temporary system-sleep hook
+logged the fuel gauge's `charge_counter` at every sleep and wake (removed
+afterwards). One unbroken sleep, 16:23:36 to 16:53:16 (no dark wake, both
+ends the owner's power key), Wi-Fi and PCIe unloaded:
+
+| | Before (screen_off 0, Wi-Fi loaded) | After (screen_off 2, Wi-Fi unloaded) |
+| --- | --- | --- |
+| Asleep | 29.4 min | 29.6 min (1779 s) |
+| Charge used | about 6 % (capacity steps only) | 136 mAh (`charge_counter` 4174000 to 4038000 uAh) |
+| Mean current | about 430 mA | **275 mA** |
+| 3828 mAh lasts | about 9 h | **about 13.9 h** |
+
+275 mA is raven's s2idle floor with Wi-Fi off (about 293 mA): what is left
+is the SoC awake in s2idle (rails, DRAM, MIF at 2028 MHz). AOSP's 23 mA
+needs SYS_SLEEP (section 1); the next steps without it are a MIF floor
+during sleep (no devfreq yet) and the Bluetooth chip, which stays powered.
+
 ## 4. Next
 
 | Step | What | Pass |
 | --- | --- | --- |
-| S7 | battery: awake vs asleep from the gauge's charge counter, cable out | a number to compare with raven's 293 mA |
