@@ -3,8 +3,10 @@
 
 Status (2026-11-08): **S1-S5 pass** on kernel `g1b68efca2dd9`: pm_test
 dry runs, RTC-woken s2idle (one 30 s, then ten 20 s cycles) and
-`systemctl suspend` woken by the power key, Wi-Fi kept connected through
-brcmfmac's D3 and Bluetooth up every time. device-oriole 0.2.12 carries
+`systemctl suspend` woken by the power key; Wi-Fi kept its association
+through brcmfmac's D3 in the rtcwake runs, while through logind
+NetworkManager drops and rejoins it, and Bluetooth links drop in every
+sleep (S5's correction). device-oriole 0.2.12 carries
 raven's sleep policy and hook; `mem_sleep_default=s2idle` is in the vendor
 cmdline for the next push (S6). Next: battery numbers (S7) and the shell's
 auto sleep (S8).
@@ -67,6 +69,20 @@ hook runs) with an RTC alarm 120 s out as a backstop. systemd-sleep froze
 `omamobile-sleep` hook), before the alarm (cleared afterwards). brcmfmac's
 D3 ACK in 13.6 ms; afterwards Wi-Fi connected and pinging (8.9 ms),
 Bluetooth powered, no UFS error. The owner confirmed the button wakes it.
+
+Correction, from the journal read afterwards: through logind, Wi-Fi did
+**not** stay connected. NetworkManager takes the device down on
+PrepareForSleep ("state change: deactivating -> disconnected (reason
+'sleeping')" at 14:57:30) and rejoins after the wake; the ping above came
+after that rejoin. The rtcwake runs of S3/S4 bypass logind, which is why
+they kept the association. And the Bluetooth headphones dropped too: the
+kernel's `hci_suspend_sync()` disconnects every link before sleep
+("soft disconnect everything", `HCI_ERROR_REMOTE_POWER_OFF`); the
+WH-1000XM4 reconnected about 3 s after the wake (bluetoothd reloading the
+A2DP endpoint at 14:58:00, also at 14:52:49 during S4). Separately, every
+reconnect logs "Unable to connect Hands-Free Voice gateway: socket(STREAM,
+RFCOMM): Protocol not supported": the kernel has no `CONFIG_BT_RFCOMM`, so
+headset calls (HFP/HSP) cannot work, asleep or awake.
 
 ## 4. Next
 
