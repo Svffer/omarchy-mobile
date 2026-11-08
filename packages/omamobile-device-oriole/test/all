@@ -71,3 +71,8 @@ grep -qx 'softdep max77759_charger pre: max17042_battery' vendor/modprobe.d/omam
   || fail "the gauge loads before the charger"
 test -x "$t/root/usr/bin/omamobile-charge-guard" || fail "omamobile-charge-guard is installed"
 pass "the charger loads with its guard"
+
+# The display stack loads at boot with 60 Hz as the ceiling (DISPLAY-PLAN D3/D4)
+grep -qx 'options gs_decon max_refresh=60' vendor/modprobe.d/omamobile-oriole-display.conf \
+  || fail "gs-decon is capped at 60 Hz on the S6E3FC3"
+pass "the display stack loads at boot at 60 Hz"

@@ -22,7 +22,8 @@ their behavior. `clk_acpm` left the list on 2026-11-08: it is the GPU's clock
 provider over ACPM, and panfrost deferred forever without it; `max17042_battery` left it the same day,
 the gauge reporting the battery as on raven; `max77759_charger` followed with
 raven's `omamobile-charger.conf` options and `omamobile-charge-guard`, once the
-battery node was in the device tree. This package does not qualify the underlying hardware.
+battery node was in the device tree. 0.2.6 loads the display stack (gs-decon,
+the S6E3FC3 panel driver) at boot, capped at 60 Hz. This package does not qualify the underlying hardware.
 Built-in drivers are outside modprobe policy.
 
 No battery startup, staged boot checker, automatic boot-success, radio,
